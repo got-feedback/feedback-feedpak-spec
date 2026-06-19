@@ -26,7 +26,8 @@ jobs:
           bad = False
           for f in sorted(glob.glob("schemas/*.json")):
               try:
-                  Draft202012Validator.check_schema(json.load(open(f, encoding="utf-8")))
+                  with open(f, encoding="utf-8") as fh:
+                      Draft202012Validator.check_schema(json.load(fh))
                   print("ok  ", f)
               except Exception as exc:
                   bad = True

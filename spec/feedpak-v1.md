@@ -99,7 +99,8 @@ my-song.feedpak/
    conventions to locate data; they **MUST** resolve files through the manifest. (Writers MAY
    use the conventional filenames shown here, but Readers MUST follow the manifest's pointers.)
 2. **Paths in `manifest.yaml` are POSIX-style relative paths** from the feedpak root: forward
-   slashes, no leading `/`, no `..` segments, no drive letters, no backslashes. Readers **MUST**
+   slashes, no leading `/`, no `..` segments, no empty segments (`//`), no colon (`:`) — which
+   excludes drive letters and alternate-data-stream paths — and no backslashes. Readers **MUST**
    reject paths that escape the package root.
 3. **YAML for the manifest, JSON for data files.** The manifest is YAML so it is comfortable to
    hand-edit; all structured data files are JSON so they are fast to parse and round-trip. A
@@ -230,7 +231,7 @@ stems:
 | `album` | string | no | Album. |
 | `year` | int | no | Release year. |
 | `duration` | number | **yes** | Song length in seconds. |
-| `arrangements` | list | **yes** | Playable arrangements (see [§5.2](#52-arrangements)). MUST be non-empty *or* an arrangement MUST be derivable from a `notation:`-only entry. |
+| `arrangements` | list | **yes** | Playable arrangements (see [§5.2](#52-arrangements)). MUST be non-empty. A notation-only entry still counts as an arrangement — it may omit `file` (see §5.2), but it is not an exception to the non-empty rule. |
 | `stems` | list | **yes** | Audio stems (see [§5.3](#53-stems)). MUST be non-empty. |
 | `stem_separation` | object | no | Provenance metadata when stems were produced by an automated separation engine. See [§5.3.1](#531-stem_separation). |
 | `lyrics` | string (path) | no | Path to a lyrics JSON file (see [§7.1](#71-lyricsjson)). |
@@ -869,7 +870,8 @@ A **conformant feedpak** (normative summary):
 
 - [ ] Has a `manifest.yaml` at the root, UTF-8, parseable as YAML.
 - [ ] Manifest has `title`, `artist`, `duration`, a non-empty `arrangements`, and a non-empty
-      `stems` (subject to the notation-only arrangement exception in [§5.2](#52-arrangements)).
+      `stems`. (A notation-only arrangement counts toward `arrangements`; it may omit `file` —
+      see [§5.2](#52-arrangements) — but does not relax the non-empty rule.)
 - [ ] Every manifest pointer resolves to an existing file via a safe POSIX relative path.
 - [ ] `feedpak_version`, if present, is a valid semver string.
 - [ ] Every side-file validates against its schema and carries a `version` where this document

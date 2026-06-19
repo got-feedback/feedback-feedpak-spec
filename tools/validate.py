@@ -42,10 +42,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO_ROOT / "schemas"
 
 SUPPORTED_MAJOR = 1
-SEMVER_RE = re.compile(
-    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"
-)
+
+
+def _semver_re() -> "re.Pattern[str]":
+    """Use the manifest schema as the single source of truth for the semver pattern, so the
+    validator and the schema can never disagree (e.g. on rejecting `1.0.0-01`)."""
+    with open(SCHEMA_DIR / "manifest.schema.json", encoding="utf-8") as fh:
+        pattern = json.load(fh)["$defs"]["semver"]["pattern"]
+    return re.compile(pattern)
+
+
+SEMVER_RE = _semver_re()
 
 # manifest pointer key -> schema file used to validate the pointed-at JSON.
 # (Audio/image pointers validate as "exists + safe path" only.)
