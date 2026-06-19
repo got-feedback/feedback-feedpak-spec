@@ -113,7 +113,15 @@ def check_pointer_exists(root: Path, relpath: str, key: str, rep: Report) -> boo
     if not safe_relpath(relpath):
         rep.err(f"manifest '{key}' is not a safe relative path: {relpath!r}")
         return False
-    if not (root / relpath).is_file():
+    # Resolve symlinks and confirm the real target stays inside the package root.
+    # A safe-looking relpath can still escape via a symlinked directory/file
+    # (e.g. stems/ -> /etc); the spec requires rejecting paths that escape the root.
+    root_real = root.resolve()
+    target_real = (root / relpath).resolve()
+    if root_real != target_real and root_real not in target_real.parents:
+        rep.err(f"manifest '{key}' escapes the package root (symlink?): {relpath}")
+        return False
+    if not target_real.is_file():
         rep.err(f"missing file referenced by manifest '{key}': {relpath}")
         return False
     return True

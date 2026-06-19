@@ -15,7 +15,12 @@
     "anchors": { "type": "array", "items": { "$ref": "#/$defs/anchor" } },
     "handshapes": { "type": "array", "items": { "$ref": "#/$defs/handshape" } },
     "templates": { "type": "array", "items": { "$ref": "#/$defs/template" } },
-    "phrases": { "type": "array", "items": { "$ref": "#/$defs/phrase" } },
+    "phrases": {
+      "type": "array",
+      "minItems": 1,
+      "$comment": "Spec §6.7: omit the key entirely when there is no ladder; an empty array is non-conformant.",
+      "items": { "$ref": "#/$defs/phrase" }
+    },
     "tones": { "type": "object" },
     "beats": { "type": "array", "items": { "$ref": "#/$defs/beat" } },
     "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } }
