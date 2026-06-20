@@ -59,6 +59,12 @@ def test_main_unknown_version_nonzero(capsys):
     assert rc == 1
 
 
+def test_main_unreadable_file_nonzero(tmp_path, capsys):
+    rc = ce.main(["changelog_extract.py", "1.2.0", str(tmp_path / "nope.md")])
+    assert rc == 1
+    assert "cannot read" in capsys.readouterr().err
+
+
 def test_main_empty_but_present_section_succeeds(tmp_path, capsys):
     # A heading that exists with no body is valid (empty release notes), exit 0.
     cl = tmp_path / "CHANGELOG.md"

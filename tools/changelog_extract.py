@@ -43,9 +43,13 @@ def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print("usage: changelog_extract.py VERSION [CHANGELOG.md]", file=sys.stderr)
         return 2
-    version = argv[1].lstrip("v")
+    version = argv[1].removeprefix("v")
     path = Path(argv[2]) if len(argv) > 2 else Path("CHANGELOG.md")
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"error: cannot read {path}: {exc}", file=sys.stderr)
+        return 1
     if not has_section(text, version):
         print(f"error: no CHANGELOG section for version {version}", file=sys.stderr)
         return 1

@@ -48,13 +48,14 @@ jobs:
           import os, zipfile, tempfile, subprocess, sys
           rc = 0
           for src in ("examples/minimal.feedpak", "examples/extended.feedpak"):
-              z = os.path.join(tempfile.mkdtemp(), os.path.basename(src))
-              with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
-                  for root, _, files in os.walk(src):
-                      for fn in files:
-                          full = os.path.join(root, fn)
-                          zf.write(full, os.path.relpath(full, src).replace("\\", "/"))
-              rc |= subprocess.call([sys.executable, "tools/validate.py", z])
+              with tempfile.TemporaryDirectory() as tmp:
+                  z = os.path.join(tmp, os.path.basename(src))
+                  with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
+                      for root, _, files in os.walk(src):
+                          for fn in files:
+                              full = os.path.join(root, fn)
+                              zf.write(full, os.path.relpath(full, src).replace("\\", "/"))
+                  rc |= subprocess.call([sys.executable, "tools/validate.py", z])
           sys.exit(rc)
           PY
 
