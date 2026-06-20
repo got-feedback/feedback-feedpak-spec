@@ -15,6 +15,10 @@ relate.
   (`tests/`), a Python 3.10–3.13 matrix and a `ruff` lint job in the validate workflow, a
   GitHub Pages workflow that publishes the JSON Schemas so their `$id` URLs resolve, and a
   release-on-tag workflow that cuts a GitHub Release from the matching changelog section.
+- Docs site (no format change): the GitHub Pages site is now built with MkDocs Material
+  (light/dark theme, search, rendered spec/hand-editing/changelog). `tools/gen_docs.py` assembles
+  the site from the canonical sources and copies the schemas in verbatim so their hosted URLs are
+  unchanged.
 
 ## [1.2.0] - 2026-06-20
 
