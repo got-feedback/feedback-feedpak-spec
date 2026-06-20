@@ -10,6 +10,19 @@ relate.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-20
+
+Additive (MINOR) release: per-note bend shape. Backward-compatible — a 1.0.0 pack is also a valid
+1.4.0 pack, and older readers ignore the new optional note fields.
+
+### Added
+- **Per-note bend shape** ([spec §6.2.1](spec/feedpak-v1.md#621-bend-shape-bt-bnv)): two OPTIONAL
+  note fields complementing the scalar `bn` peak — `bt` (bend intent: up / release / pre-bend /
+  pre-bend-release / round-trip) and `bnv` (a time-stamped `[{t, v}]` bend curve). Lets renderers
+  draw the bend arc and graders judge the right pitch over the note. Schema: `bt` + `bnv` on
+  `$defs/note` in [`schemas/arrangement.schema.json`](schemas/arrangement.schema.json); exercised
+  by the extended example pack.
+
 ### Fixed
 - §5.2 `tuning`: corrected the accepted-length range from "4–7 (4 = bass)" to **4–8**
   (4–6 = bass, 6–8 = extended-range guitar). 6-string bass and 7/8-string guitar were
@@ -101,7 +114,8 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.0.0...v1.1.0

@@ -43,7 +43,20 @@
         "sus": { "type": "number" },
         "sl": { "type": "integer" },
         "slu": { "type": "integer" },
-        "bn": { "type": "number" }
+        "bn": { "type": "number" },
+        "bt": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "bnv": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["t", "v"],
+            "additionalProperties": true,
+            "properties": {
+              "t": { "type": "number" },
+              "v": { "type": "number" }
+            }
+          }
+        }
       }
     },
     "chordNote": {
