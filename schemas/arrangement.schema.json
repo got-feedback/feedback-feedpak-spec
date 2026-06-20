@@ -22,7 +22,12 @@
       "items": { "$ref": "#/$defs/phrase" }
     },
     "tones": { "type": "object" },
-    "tempos": { "type": "array", "items": { "$ref": "#/$defs/tempoEvent" } },
+    "tempos": {
+      "type": "array",
+      "minItems": 1,
+      "$comment": "Spec §6.10: omit the key entirely when the chart follows the song tempo; an empty array is non-conformant.",
+      "items": { "$ref": "#/$defs/tempoEvent" }
+    },
     "beats": { "type": "array", "items": { "$ref": "#/$defs/beat" } },
     "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } }
   },
