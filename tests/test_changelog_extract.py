@@ -49,9 +49,23 @@ def test_extracts_repo_changelog_current_version():
     assert ce.extract(text, "1.2.0").strip()    # the real changelog has a 1.2.0 section
 
 
+def test_has_section_presence():
+    assert ce.has_section(SAMPLE, "1.2.0")
+    assert not ce.has_section(SAMPLE, "9.9.9")
+
+
 def test_main_unknown_version_nonzero(capsys):
     rc = ce.main(["changelog_extract.py", "0.0.0", str(ROOT / "CHANGELOG.md")])
     assert rc == 1
+
+
+def test_main_empty_but_present_section_succeeds(tmp_path, capsys):
+    # A heading that exists with no body is valid (empty release notes), exit 0.
+    cl = tmp_path / "CHANGELOG.md"
+    cl.write_text("# Changelog\n\n## [3.0.0] - 2026-01-01\n\n## [2.0.0]\n- old\n", encoding="utf-8")
+    rc = ce.main(["changelog_extract.py", "3.0.0", str(cl)])
+    assert rc == 0
+    assert capsys.readouterr().out.strip() == ""
 
 
 @pytest.mark.parametrize("arg", ["1.2.0", "v1.2.0"])
