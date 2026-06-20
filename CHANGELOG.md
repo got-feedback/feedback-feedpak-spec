@@ -10,6 +10,23 @@ relate.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-21
+
+Additive (MINOR) release: per-note teaching marks. Backward-compatible — a 1.0.0 pack is also a
+valid 1.5.0 pack, and older readers ignore the new optional note fields.
+
+### Added
+- **Per-note teaching marks** ([spec §6.2.2](spec/feedpak-v1.md#622-teaching-marks-fg-ch-sd)):
+  three OPTIONAL note fields that annotate how a note is taught or displayed, never whether it was
+  played correctly (the **honesty rule** — graders MUST NOT score them) — `fg` (fret-hand finger,
+  `-1` unset / `0` thumb / `1`–`4` index→pinky, same convention as `template.fingers`), `ch`
+  (strum-group key: notes sharing a value `≥ 0` are one strum/rake gesture, with `pkd` giving
+  direction), and `sd` (scale degree as a chromatic offset `0`–`11` above the active
+  [`keys.json`](spec/feedpak-v1.md#77-keysjson) tonic; derivable, so a Reader MAY compute it).
+  Schema: `fg` / `ch` / `sd` on `$defs/note` in
+  [`schemas/arrangement.schema.json`](schemas/arrangement.schema.json); exercised by the extended
+  example pack (an Em-triad rake grouped by `ch`).
+
 ## [1.4.0] - 2026-06-20
 
 Additive (MINOR) release: per-note bend shape. Backward-compatible — a 1.0.0 pack is also a valid
@@ -114,7 +131,8 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.1.0...v1.2.0
