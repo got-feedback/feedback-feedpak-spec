@@ -19,6 +19,10 @@ relate.
   (light/dark theme, search, rendered spec/hand-editing/changelog). `tools/gen_docs.py` assembles
   the site from the canonical sources and copies the schemas in verbatim so their hosted URLs are
   unchanged.
+- Release automation (no format change): a reviewed version bump now cuts its GitHub Release
+  automatically on merge to `main` (idempotent release-on-merge), replacing the manual
+  tag-triggered flow. A `tools/check_versions.py` CI guard enforces that the spec header, the
+  README table, and the newest released `CHANGELOG.md` version stay in lockstep.
 
 ## [1.2.0] - 2026-06-20
 
