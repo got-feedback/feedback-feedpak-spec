@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.3.0
+- **Specification version:** 1.4.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-06-20
@@ -140,16 +140,17 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.3.0"
+feedpak_version: "1.4.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.3.0"`. (The optional fields added since 1.0.0 —
-  [`authors`](#54-authors) in 1.1.0, and the song-level [`tempos`](#74-song_timelinejson) /
+  `feedpak_version: "1.4.0"`. (The optional fields added since 1.0.0 —
+  [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
-  [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0 — are all additive; 1.3.0
-  itself adds no on-disk field, so an older Reader simply ignores what it does not recognise and
-  a 1.2.0 pack is also a valid 1.3.0 pack.)
+  [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; and the per-note bend shape
+  [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0 — are all additive, so
+  an older Reader simply ignores what it does not recognise and a 1.0.0 pack is also a valid
+  1.4.0 pack. 1.3.0 added no on-disk field.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -406,7 +407,9 @@ Field names are short on purpose. A Writer **MUST NOT** expand them.
   "sus": 0.5,     // sustain (s, 0 = none)
   "sl": 9,        // pitched slide-to fret (-1 = no slide)
   "slu": -1,      // unpitched slide-to fret (-1 = no slide)
-  "bn": 1.0,      // bend amount in semitones
+  "bn": 1.0,      // bend amount in semitones (peak)
+  "bt": 4,        // OPTIONAL bend intent (§6.2.1): 0 up, 1 release, 2 pre-bend, 3 pre-bend-release, 4 round-trip
+  "bnv": [{ "t": 0, "v": 0 }, { "t": 0.25, "v": 1.0 }, { "t": 0.5, "v": 0 }],  // OPTIONAL time-stamped bend curve
   "ho": false,    // hammer-on
   "po": false,    // pull-off
   "hm": false,    // natural harmonic
@@ -430,6 +433,29 @@ Field names are short on purpose. A Writer **MUST NOT** expand them.
 Only `t`, `s`, and `f` are REQUIRED. Numeric defaults are `0`, or `-1` for the slide / `rh` /
 `pkd` fields; boolean defaults are `false`. When authoring by hand, a Writer **MAY** omit any
 field equal to its default; a Reader **MUST** fill in defaults for absent fields.
+
+#### 6.2.1. Bend shape (`bt`, `bnv`)
+
+`bn` is the bend's **peak** magnitude in semitones. Two OPTIONAL fields describe its shape over
+time; both were added in 1.4.0 and an older Reader simply ignores them, treating the note as a
+plain bend-up to `bn`.
+
+- **`bt`** — bend **intent**, an integer (default `0`):
+
+  | `bt` | meaning |
+  |---|---|
+  | `0` | bend up (default) |
+  | `1` | release (a held bend let down) |
+  | `2` | pre-bend (already bent at the note's onset) |
+  | `3` | pre-bend-and-release |
+  | `4` | round-trip (bend up then back down within the note) |
+
+- **`bnv`** — a **time-stamped bend curve**: an array of `{ "t": <seconds from the note's onset>,
+  "v": <semitones> }` points, in non-descending `t` order. When present, `bnv` is the authoritative
+  shape and `bt` is advisory; `bn` remains the peak for Readers that don't interpolate the curve.
+  Omit `bnv` for a simple bend.
+
+A note **SHOULD NOT** carry `bnv` or a non-zero `bt` when `bn` is `0`.
 
 ### 6.3. Chords
 
