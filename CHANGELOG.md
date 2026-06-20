@@ -10,15 +10,48 @@ relate.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-20
+
+Additive (MINOR) release: per-note bend shape. Backward-compatible — a 1.0.0 pack is also a valid
+1.4.0 pack, and older readers ignore the new optional note fields.
+
+### Added
+- **Per-note bend shape** ([spec §6.2.1](spec/feedpak-v1.md#621-bend-shape-bt-bnv)): two OPTIONAL
+  note fields complementing the scalar `bn` peak — `bt` (bend intent: up / release / pre-bend /
+  pre-bend-release / round-trip) and `bnv` (a time-stamped `[{t, v}]` bend curve). Lets renderers
+  draw the bend arc and graders judge the right pitch over the note. Schema: `bt` + `bnv` on
+  `$defs/note` in [`schemas/arrangement.schema.json`](schemas/arrangement.schema.json); exercised
+  by the extended example pack.
+
+### Fixed
+- §5.2 `tuning`: corrected the accepted-length range from "4–7 (4 = bass)" to **4–8**
+  (4–6 = bass, 6–8 = extended-range guitar). 6-string bass and 7/8-string guitar were
+  already permitted by the schema (`tuning` has no `maxItems`, note `s` has no maximum)
+  and by the "Readers MUST NOT hard-code length 6" rule, but the prose under-stated the
+  upper bound. Editorial clarification only — no on-disk format change.
+
+## [1.3.0] - 2026-06-20
+
+Tooling, docs, and example release — no on-disk format change (a 1.2.0 pack is also a valid
+1.3.0 pack). Bundles the repository's testing/CI, the documentation site, release automation,
+and a worked keyboard-notation example.
+
 ### Added
 - Repository CI/CD (no format change): a `pytest` test suite for the reference validator
-  (`tests/`), a Python 3.10–3.13 matrix and a `ruff` lint job in the validate workflow, a
-  GitHub Pages workflow that publishes the JSON Schemas so their `$id` URLs resolve, and a
-  release-on-tag workflow that cuts a GitHub Release from the matching changelog section.
+  (`tests/`), a Python 3.10–3.13 matrix and a `ruff` lint job in the validate workflow, and a
+  GitHub Pages workflow that publishes the JSON Schemas so their `$id` URLs resolve. (Release
+  automation is described in its own bullet below.)
 - Docs site (no format change): the GitHub Pages site is now built with MkDocs Material
   (light/dark theme, search, rendered spec/hand-editing/changelog). `tools/gen_docs.py` assembles
   the site from the canonical sources and copies the schemas in verbatim so their hosted URLs are
   unchanged.
+- Example (no format change): the extended pack now includes a notation-only `keys` arrangement
+  (`type: piano`) with a two-stave `notation_<id>.json` part, so the §7.6 standard-notation /
+  keyboard-arrangement path is exercised by the validator and CI.
+- Release automation (no format change): a reviewed version bump now cuts its GitHub Release
+  automatically on merge to `main` (idempotent release-on-merge), replacing the manual
+  tag-triggered flow. A `tools/check_versions.py` CI guard enforces that the spec header, the
+  README table, and the newest released `CHANGELOG.md` version stay in lockstep.
 
 ## [1.2.0] - 2026-06-20
 
@@ -81,7 +114,9 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/got-feedback/feedpak-spec/releases/tag/v1.0.0

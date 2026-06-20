@@ -14,7 +14,7 @@ with them. One `.feedpak` holds all the authored data for a single song.
 
 | | |
 |---|---|
-| **Specification version** | 1.2.0 |
+| **Specification version** | 1.4.0 |
 | **Format major version** | 1 |
 | **Status** | Draft |
 | **Canonical extension** | `.feedpak` |
@@ -76,9 +76,11 @@ python -m ruff check tools/ tests/
 ```
 
 CI (`.github/workflows/validate.yml`) runs the schema meta-check, validates the example packs
-(directory and zip form), runs the tests across Python 3.10–3.13, and lints. The schemas are
-published to GitHub Pages on every push to `main`, and pushing a `vX.Y.Z` tag cuts a GitHub
-Release from the matching `CHANGELOG.md` section.
+(directory and zip form), runs the tests across Python 3.10–3.13, lints, checks that the spec,
+README, and `CHANGELOG.md` versions agree, and builds the docs site. On every push to `main` the
+docs are published to GitHub Pages, and a GitHub Release is cut automatically for the newest
+released `CHANGELOG.md` version if one does not already exist — so a reviewed version bump
+releases itself on merge. No manual tagging required.
 
 ## License
 
@@ -92,7 +94,7 @@ This repository is dual-licensed so the format stays maximally open:
 
 Attribution is **not required**, but if you build on feedpak a link back to this
 repository is appreciated. Suggested citation: *"feedpak format specification, version
-1.2.0, https://github.com/got-feedback/feedpak-spec"*.
+1.4.0, https://github.com/got-feedback/feedpak-spec"*.
 
 ## Contributing
 
