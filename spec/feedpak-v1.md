@@ -7,10 +7,10 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.4.0
+- **Specification version:** 1.5.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-06-20
+- **Date:** 2026-06-21
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
@@ -140,17 +140,19 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.4.0"
+feedpak_version: "1.5.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.4.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.5.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
-  [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; and the per-note bend shape
-  [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0 — are all additive, so
-  an older Reader simply ignores what it does not recognise and a 1.0.0 pack is also a valid
-  1.4.0 pack. 1.3.0 added no on-disk field.)
+  [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
+  [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0; and the per-note
+  teaching marks [`fg`](#622-teaching-marks-fg-ch-sd) / [`ch`](#622-teaching-marks-fg-ch-sd) /
+  [`sd`](#622-teaching-marks-fg-ch-sd) in 1.5.0 — are all additive, so an older Reader simply
+  ignores what it does not recognise and a 1.0.0 pack is also a valid 1.5.0 pack. 1.3.0 added no
+  on-disk field.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -426,13 +428,16 @@ Field names are short on purpose. A Writer **MUST NOT** expand them.
   "slp": false,   // slap (bass)
   "rh": -1,       // right-hand fingering (-1 = unset)
   "pkd": -1,      // pick direction (-1 = unset, 0 = down, 1 = up)
+  "fg": -1,       // OPTIONAL fret-hand finger, teaching mark (§6.2.2): -1 unset, 0 thumb, 1–4 index→pinky
+  "ch": -1,       // OPTIONAL strum-group key, teaching mark (§6.2.2): notes sharing a value ≥ 0 are one strum gesture
+  "sd": -1,       // OPTIONAL scale degree, teaching mark (§6.2.2): chromatic offset 0–11 above the active key's tonic
   "ig": false     // ignore (authoring flag — rendered but not scored / sequenced)
 }
 ```
 
 Only `t`, `s`, and `f` are REQUIRED. Numeric defaults are `0`, or `-1` for the slide / `rh` /
-`pkd` fields; boolean defaults are `false`. When authoring by hand, a Writer **MAY** omit any
-field equal to its default; a Reader **MUST** fill in defaults for absent fields.
+`pkd` / `fg` / `ch` / `sd` fields; boolean defaults are `false`. When authoring by hand, a Writer
+**MAY** omit any field equal to its default; a Reader **MUST** fill in defaults for absent fields.
 
 #### 6.2.1. Bend shape (`bt`, `bnv`)
 
@@ -456,6 +461,43 @@ plain bend-up to `bn`.
   Omit `bnv` for a simple bend.
 
 A note **SHOULD NOT** carry `bnv` or a non-zero `bt` when `bn` is `0`.
+
+#### 6.2.2. Teaching marks (`fg`, `ch`, `sd`)
+
+Three OPTIONAL fields added in 1.5.0 annotate *how a note is taught or displayed*. They are
+**teaching marks**, not performance data: a renderer **MAY** show them, but a grader **MUST NOT**
+use them to decide whether a note was played correctly. An older Reader ignores them.
+
+- **`fg`** — the **fret-hand finger** the chart prescribes, an integer (default `-1`):
+
+  | `fg` | finger |
+  |---|---|
+  | `-1` | unset — no prescription (default) |
+  | `0` | thumb |
+  | `1` | index |
+  | `2` | middle |
+  | `3` | ring |
+  | `4` | pinky |
+
+  This is the same convention as a chord [`template.fingers`](#63-chords) entry, lifted to the
+  single note. `fg = -1` (or absent) means the chart does **not** prescribe a finger — it does
+  **not** mean "wrong finger". A grader **MUST NOT** penalise a performance for the finger used.
+
+- **`ch`** — a **strum-group key**, an integer (default `-1`). Notes within one arrangement that
+  share the same `ch` value `≥ 0` are performed as a single strum or rake gesture and **MAY** be
+  drawn with a strum indicator; [`pkd`](#62-notes) gives the gesture's direction. The value is an
+  opaque grouping label, not an index or an ordering. `ch = -1` (or absent) means ungrouped.
+  Whereas a chord groups notes sounded *simultaneously*, `ch` groups notes — possibly slightly
+  staggered in `t` — that the player executes as one motion.
+
+- **`sd`** — the note's **scale degree**, an integer `0`–`11` (default `-1`). It is the note's
+  pitch class expressed as a **chromatic offset in semitones above the tonic** of the key/scale
+  active at the note's time (see [`keys.json`](#77-keysjson)): `0` = tonic, `2` = major second,
+  `3` = minor third, `7` = perfect fifth, and so on. A display layer maps it to a conventional
+  degree label (`1`, `♭3`, `5`, …) using the active scale. Because `sd` is fully derivable from
+  `keys.json` and the note's pitch, a Reader **MAY** compute it itself and a Writer **MAY** omit
+  it; when present it is a cached value or an author override. `sd = -1` (or absent) means unset —
+  for instance when no key is in effect.
 
 ### 6.3. Chords
 
