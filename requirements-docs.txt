@@ -1,0 +1,2 @@
+# Docs-site dependencies (GitHub Pages build only). See .github/workflows/pages.yml.
+mkdocs-material
