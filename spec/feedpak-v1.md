@@ -176,7 +176,10 @@ Changes to the format are released under semver semantics, applied to `feedpak_v
 **Reader rules.** A Reader that supports feedpak major version *X*:
 
 - **MUST** accept any package whose declared major version is *X*, regardless of its minor or
-  patch (it ignores unknown minor additions per [§1.2](#12-roles)).
+  patch (it ignores unknown minor additions per [§1.2](#12-roles)) — with the single exception that
+  a package which *uses* an opt-in file-format relaxation the Reader does not implement (see the
+  carve-out below) **MAY** be rejected with a clear error. This MUST-accept guarantee otherwise
+  holds for all ordinary additive minor/patch changes.
 - **SHOULD** warn, and **MAY** refuse with a clear error, when a package declares a major
   version **greater** than *X*.
 - **MAY** accept a package whose major version is **less** than *X*, applying the
@@ -194,8 +197,10 @@ comments a Reader **MUST** strip. The justification for keeping it minor rather 
 it is **strictly opt-in and per-file**: a pack that does not adopt `.jsonc` — and a `.jsonc` file
 that contains no comments — is byte-for-byte ordinary JSON that every Reader handles. Only a pack
 that *actually uses* the relaxation requires a Reader supporting the minor version that introduced
-it. This is therefore an explicit, bounded exception to the "older Readers keep working by ignoring
-them" rule above, **not** a general license to add un-ignorable changes under a minor bump; any
+it. This is therefore an explicit, bounded exception both to the "older Readers keep working by
+ignoring them" rule and to the **Reader rule** that a major-*X* Reader MUST accept any *X.y.z*
+package (a Reader **MAY** reject a package that uses a relaxation it does not implement). It is
+**not** a general license to add un-ignorable changes under a minor bump; any
 future relaxation of this kind **MUST** be opt-in and per-file in the same way, or else be released
 as a **major** bump. A Writer that needs maximum Reader compatibility **SHOULD NOT** rely on the
 relaxation (for `.jsonc`: keep data files as comment-free `.json`).
