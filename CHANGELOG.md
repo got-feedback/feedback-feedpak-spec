@@ -13,7 +13,9 @@ relate.
 ## [1.6.0] - 2026-06-21
 
 Additive (MINOR) release: the `.jsonc` data-file extension (comment-annotated JSON), plus a
-docs-site version banner. Backward-compatible — no existing pack is affected.
+docs-site version banner. No existing pack is affected — but note that a `.jsonc` file that
+actually contains comments requires a JSONC-aware Reader (a strict-JSON-only Reader cannot read
+it); see the JSONC bullet below.
 
 ### Added
 - Docs site (no format change): a build-time version banner. The site now stamps the newest

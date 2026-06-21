@@ -152,9 +152,11 @@ feedpak_version: "1.6.0"
   [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0; and the per-note
   teaching marks [`fg`](#622-teaching-marks-fg-ch-sd) / [`ch`](#622-teaching-marks-fg-ch-sd) /
   [`sd`](#622-teaching-marks-fg-ch-sd) in 1.5.0 — are all additive, so an older Reader simply
-  ignores what it does not recognise and a 1.0.0 pack is also a valid 1.6.0 pack. 1.3.0 added no
-  on-disk field; 1.6.0 accepts the `.jsonc` data-file extension (see [§8](#8-reading-and-writing))
-  but adds no on-disk field.)
+  ignores what it does not recognise. 1.3.0 added no on-disk field. 1.6.0 adds no new manifest
+  key or note/side-file field either, but it does newly permit the `.jsonc` data-file extension
+  (see [§8](#8-reading-and-writing)): such files MAY contain comments that a Reader **MUST** strip,
+  so — unlike the additive fields above — a comment-bearing `.jsonc` file requires a JSONC-aware
+  Reader rather than being silently ignorable.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -982,12 +984,18 @@ valid JSON. A Writer that preserves edits to a `.jsonc` file **SHOULD** leave th
 intact. For new hand-edited packs, Writers **MAY** write `.jsonc` data files and **MAY** include
 comments in them.
 
-Note on compatibility: a comment-free `.jsonc` file is byte-for-byte valid JSON, but a `.jsonc`
-file that *contains* comments can only be read by a Reader that implements this comment-stripping
-step — a plain JSON parser errors on `//` and `/* */`. This is still an additive change (no
-existing pack is affected; packs that do not opt into `.jsonc` are unchanged), but a Writer that
-needs a pack to be readable by the broadest range of Readers **SHOULD** keep its data files as
-comment-free `.json`.
+Note on compatibility. Two facts must be kept separate, and this differs from the additive *field*
+changes governed by [§4.2](#42-compatibility-policy):
+
+1. **No existing pack breaks.** Packs that do not adopt `.jsonc` are entirely unchanged, and a
+   comment-free `.jsonc` file is byte-for-byte valid JSON.
+2. **A `.jsonc` file that actually contains comments is NOT readable by a strict-JSON-only
+   Reader** — such a Reader errors on `//` and `/* */`. Only a Reader that implements the
+   comment-stripping step above can read it. Unlike the optional fields of §4.2, comments cannot
+   be safely *ignored* by an unaware Reader.
+
+A Writer that needs a pack to be readable by the broadest range of Readers therefore **SHOULD**
+keep its data files as comment-free `.json`.
 
 **Writing.** Build the package in a working directory: write `arrangements/<id>.json` per
 arrangement; encode audio into `stems/`; write any side-files; compose `manifest.yaml` last so
