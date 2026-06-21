@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.6.0
+- **Specification version:** 1.7.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-06-21
@@ -141,18 +141,20 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.6.0"
+feedpak_version: "1.7.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.6.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.7.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
-  [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0; and the per-note
+  [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0; the per-note
   teaching marks [`fg`](#622-teaching-marks-fg-ch-sd) / [`ch`](#622-teaching-marks-fg-ch-sd) /
-  [`sd`](#622-teaching-marks-fg-ch-sd) in 1.5.0 — are all additive, so an older Reader simply
-  ignores what it does not recognise. 1.3.0 added no on-disk field. 1.6.0 adds no new manifest
+  [`sd`](#622-teaching-marks-fg-ch-sd) in 1.5.0; and the per-chord harmony annotations
+  [`fn`](#631-harmonic-function-fn) / [`voicing`](#66-chord-templates) in 1.7.0 — are all
+  additive, so an older Reader simply ignores what it does not recognise. 1.3.0 added no on-disk
+  field. 1.6.0 adds no new manifest
   key or note/side-file field either, but it does newly permit the `.jsonc` data-file extension
   (see [§8](#8-reading-and-writing)): such files MAY contain comments that a Reader **MUST** strip,
   so — unlike the additive fields above — a comment-bearing `.jsonc` file requires a JSONC-aware
@@ -534,12 +536,35 @@ A chord groups note-shaped objects under a single time:
   "notes": [
     {"s": 0, "f": 3, "sus": 0.0},
     {"s": 1, "f": 5, "sus": 0.0}
-  ]
+  ],
+  "fn": {"rn": "ii7", "q": "m7", "deg": 2}  // OPTIONAL harmonic function (§6.3.1)
 }
 ```
 
 Chord notes use the same field set as standalone notes **except** that `t` is omitted — the
 chord carries the time. `id` indexes into `templates[]` for the fingering/shape.
+
+#### 6.3.1. Harmonic function (`fn`)
+
+`fn` is an OPTIONAL object describing the chord's harmonic function in the active key. Added in
+1.7.0, it is a **teaching annotation**, not performance data: a renderer **MAY** display it, but a
+grader **MUST NOT** use it to score whether the chord was played correctly. An older Reader ignores
+it.
+
+| key | type | meaning |
+|---|---|---|
+| `rn` | string | Roman-numeral label, for display (e.g. `"ii7"`, `"V7"`, `"♭VII"`). |
+| `q` | string | chord quality token (e.g. `"maj7"`, `"m7"`, `"7"`, `"m7b5"`, `"sus4"`). |
+| `deg` | integer `0`–`11` | chromatic offset in semitones of the chord **root** above the tonic of the key/scale active at the chord's time (`0` = tonic), mirroring the per-note [`sd`](#622-teaching-marks-fg-ch-sd) convention. |
+
+`fn` itself is OPTIONAL, but when present all three keys (`rn`, `q`, `deg`) are REQUIRED — a
+half-specified function is ambiguous. `fn` describes the chord's **as-played** function and is fully derivable from the chord root and the
+key active at its time (see [`keys.json`](#77-keysjson)), so a Reader **MAY** compute it and a
+Writer **MAY** omit it; when present it is a cached value or an author override. It lives on the
+chord **instance** (§6.3), not the [template](#66-chord-templates) — the same shape is reused across
+keys, so its function is not a property of the shape. A future song-level *harmony track* would
+instead carry the song's **intended** chord progression; `fn` describes each chord as actually
+voiced, and the two are deliberately distinct.
 
 ### 6.4. Anchors
 
@@ -574,7 +599,8 @@ Named shapes referenced by `chord.id` and `handshape.chord_id`:
   "displayName": "Em7",
   "arp": false,
   "fingers": [-1, 2, 1, -1, -1, -1],
-  "frets":   [ 0, 2, 2,  0,  0,  0]
+  "frets":   [ 0, 2, 2,  0,  0,  0],
+  "voicing": "open"
 }
 ```
 
@@ -585,6 +611,7 @@ Named shapes referenced by `chord.id` and `handshape.chord_id`:
 | `arp` | boolean | `false` | Whether the template is arpeggiated. |
 | `fingers` | int[] | all `-1` | Fretting-hand fingers, lowest string first. `-1` = unused, `0` = open / no finger, `1..4` = index/middle/ring/pinky. Length matches the string count. |
 | `frets` | int[] | all `-1` | Fret numbers, lowest string first. `-1` = unused, `0` = open, positive = fretted. |
+| `voicing` | string | `""` | OPTIONAL voicing type of the shape (1.7.0) — e.g. `"open"`, `"triad"`, `"shell"`, `"drop2"`, `"drop3"`, `"barre"`. A **teaching annotation** (display only — a grader **MUST NOT** score it); free-form, but a Writer SHOULD prefer the listed tokens. It describes the key-independent shape, which is why it lives on the template rather than the chord instance (cf. [`fn`](#631-harmonic-function-fn)). |
 
 ### 6.7. Phrases (OPTIONAL — multi-difficulty data)
 

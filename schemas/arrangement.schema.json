@@ -80,7 +80,17 @@
         "t": { "type": "number" },
         "id": { "type": "integer" },
         "hd": { "type": "boolean" },
-        "notes": { "type": "array", "items": { "$ref": "#/$defs/chordNote" } }
+        "notes": { "type": "array", "items": { "$ref": "#/$defs/chordNote" } },
+        "fn": {
+          "type": "object",
+          "required": ["rn", "q", "deg"],
+          "additionalProperties": true,
+          "properties": {
+            "rn": { "type": "string" },
+            "q": { "type": "string" },
+            "deg": { "type": "integer", "minimum": 0, "maximum": 11 }
+          }
+        }
       }
     },
     "anchor": {
@@ -111,7 +121,8 @@
         "displayName": { "type": "string" },
         "arp": { "type": "boolean" },
         "fingers": { "type": "array", "items": { "type": "integer" } },
-        "frets": { "type": "array", "items": { "type": "integer" } }
+        "frets": { "type": "array", "items": { "type": "integer" } },
+        "voicing": { "type": "string" }
       }
     },
     "phrase": {

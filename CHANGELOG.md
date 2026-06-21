@@ -17,6 +17,25 @@ relate.
   manifest, in addition to the newest `CHANGELOG.md` version. A missed spot during a bump now
   fails CI with a precise diff instead of drifting silently.
 
+## [1.7.0] - 2026-06-21
+
+Additive (MINOR) release: per-chord harmony annotations. Backward-compatible — a 1.0.0 pack is also
+a valid 1.7.0 pack, and older readers ignore the new optional fields.
+
+### Added
+- **Per-chord harmony annotations** ([spec §6.3.1](spec/feedpak-v1.md#631-harmonic-function-fn),
+  [§6.6](spec/feedpak-v1.md#66-chord-templates)): two OPTIONAL fields that annotate a chord's
+  harmony for teaching/display, never grading (the **honesty rule** — a grader MUST NOT score
+  them) — `fn` on the chord **instance** (`{rn, q, deg}`: Roman-numeral label, quality token, and
+  the chord root's chromatic offset `0`–`11` above the active [`keys.json`](spec/feedpak-v1.md#77-keysjson)
+  tonic, mirroring `sd`; the chord's *as-played* function, derivable so a Reader MAY compute it),
+  and `voicing` on the chord **template** (a key-independent voicing-type string, e.g. `open` /
+  `shell` / `drop2`). Function rides the instance and voicing the template because the same shape
+  recurs across keys. `fn`'s prose notes its boundary with a future song-level harmony track (the
+  *intended* progression). Schema: `fn` on `$defs/chord` and `voicing` on `$defs/template` in
+  [`schemas/arrangement.schema.json`](schemas/arrangement.schema.json); exercised by the extended
+  example (an Em chord as `vi` in G major). `caged` and `guideTones` from the FEP are deferred.
+
 ## [1.6.0] - 2026-06-21
 
 MINOR release under the new §4.2 *opt-in file-format relaxation* carve-out: the `.jsonc`
@@ -166,7 +185,8 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.3.0...v1.4.0
