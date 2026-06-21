@@ -16,11 +16,78 @@ def test_repo_is_consistent():
     assert cv.main() == 0
 
 
-def test_spec_regex_matches_header():
+def test_collect_covers_every_location_and_agrees():
+    found = cv.collect()
+    # All the locations the guard is supposed to watch are present...
+    for label in ("spec header", "README table", "README citation",
+                  "extended example", "CHANGELOG"):
+        assert label in found, f"missing coverage for {label}"
+    # ...§4.1 carries the version in more than one spot (yaml block + SHOULD line)...
+    assert any(k.startswith("spec §4.1") for k in found)
+    # ...and they all agree on a single version.
+    assert None not in found.values()
+    assert len(set(found.values())) == 1
+
+
+def test_guard_never_reads_the_minimal_manifest(monkeypatch):
+    # The minimal pack deliberately stays at 1.0.0, so the guard must not read it at
+    # all (reading it under any label would force it to the current version). Spy on
+    # _read and assert the minimal manifest is never touched, while the extended one is.
+    minimal = (ROOT / "examples" / "minimal.feedpak" / "manifest.yaml").read_text(encoding="utf-8")
+    assert 'feedpak_version: "1.0.0"' in minimal          # documents the intent
+
+    reads: list[str] = []
+    original = cv._read
+
+    def spy(rel: str):
+        reads.append(rel)
+        return original(rel)
+
+    monkeypatch.setattr(cv, "_read", spy)
+    cv.collect()
+
+    assert "examples/extended.feedpak/manifest.yaml" in reads      # extended IS watched
+    assert not any("minimal.feedpak" in r for r in reads)          # minimal is NOT read
+
+
+def test_section_slice_excludes_minimal_example():
     text = (ROOT / "spec" / "feedpak-v1.md").read_text(encoding="utf-8")
-    assert cv._SPEC_RE.search(text)
+    # The end marker must actually exist, so the slice is genuinely bounded and not a
+    # rest-of-document fallback (which could swallow the §5 minimal example).
+    assert "### 4.2." in text
+    section = cv._section(text, "### 4.1.", "### 4.2.")
+    assert section.startswith("### 4.1.")
+    assert "### 4.2." not in section
+    # The §5 minimal-manifest example pins `feedpak_version: "1.0.0"`; it MUST be outside
+    # the §4.1 slice, or the guard would read it as a current-version mismatch.
+    assert 'feedpak_version: "1.0.0"' not in section
+    # Every `feedpak_version` the slice *does* contain is the current (header) version.
+    header = cv._SPEC_HEADER_RE.search(text).group(1)
+    hits = cv._FEEDPAK_VERSION_RE.findall(section)
+    assert hits and all(v == header for v in hits)
 
 
-def test_readme_regex_matches_table():
-    text = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert cv._README_RE.search(text)
+def test_missing_section_marker_reports_real_cause(monkeypatch, capsys):
+    # If the §4.2 bounding heading is renamed, the guard must point at that — not
+    # emit a confusing mismatch from swallowing the rest of the document.
+    original = cv._read
+
+    def fake(rel: str):
+        text = original(rel)
+        if rel == "spec/feedpak-v1.md" and text is not None:
+            text = text.replace("### 4.2.", "### 4.2-renamed.")
+        return text
+
+    monkeypatch.setattr(cv, "_read", fake)
+    assert cv.main() == 1
+    assert "4.2" in capsys.readouterr().err
+
+
+def test_regexes_match_real_files():
+    spec = (ROOT / "spec" / "feedpak-v1.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    ext = (ROOT / "examples" / "extended.feedpak" / "manifest.yaml").read_text(encoding="utf-8")
+    assert cv._SPEC_HEADER_RE.search(spec)
+    assert cv._README_TABLE_RE.search(readme)
+    assert cv._README_CITE_RE.search(readme)
+    assert cv._FEEDPAK_VERSION_RE.search(ext)
