@@ -123,8 +123,9 @@ my-song.feedpak/
   them. One-off metadata MAY use long, descriptive names.
 - **Audio stems** default to OGG (Vorbis) at a quality around `-q:a 5` (size/fidelity balance).
   OGG and WAV together form the **baseline every Reader MUST decode**; other formats MAY be
-  carried and are dispatched by file extension; see [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)
-  for the full decoder baseline and portability rule. **Cover art** is JPEG or PNG, conventionally
+  carried and are dispatched by file extension (or an explicit `codec` override); see
+  [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability) for the full decoder baseline,
+  codec-resolution precedence, and portability rule. **Cover art** is JPEG or PNG, conventionally
   square, 500–1500 px on a side.
 - **Unknown keys / files / fields** are reserved for forward-compatibility. Readers **MUST**
   ignore them rather than error, and Writers that copy or re-emit a feedpak **SHOULD** preserve
@@ -400,7 +401,10 @@ the recommended, broadly-portable formats; FLAC/WAV suit lossless masters, Opus/
 compressed delivery.
 
 **Portability rule.** A pack intended for distribution **MUST** include at least one stem whose
-format is in the MUST-decode baseline (in practice, an OGG or WAV `full` mix). Stems in any other
+**resolved codec** (per the precedence above — `codec` override, else extension) is in the
+MUST-decode baseline (in practice, an OGG or WAV `full` mix). The resolved codec, not the file
+extension alone, is what counts: a stem declaring `file: stems/full.wav` with `codec: mp3` is an
+MP3 stem and does **not** satisfy the baseline. Stems in any other
 format are **opportunistic enhancements** layered on top of that guaranteed-playable baseline, so
 a leaner Reader always has something to play. A Writer that controls its target environment **MAY**
 omit the baseline stem, but such a pack is not portable and a Reader **MAY** reject it with a

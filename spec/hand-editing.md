@@ -99,6 +99,9 @@ rhythm guitar, and you'd rather play and record your own take.
 3. Quality slider around **5** is a good size/quality balance for OGG (the [spec's media
    conventions](feedpak-v1.md#appendix-b-non-normative--media-conventions)). Save as
    `rhythm_custom.ogg`.
+   - *Exporting a different format?* The quality-slider guidance is OGG-specific (it doesn't
+     apply to WAV/FLAC/MP3/Opus). Use the matching file extension (e.g. `rhythm_custom.flac`)
+     and use that exact name in the manifest `file:` path in Step 4.
 4. Confirm the export sample rate matches the rate you noted in Step 1.
 
 ### Step 4 — Drop it in and update the manifest
