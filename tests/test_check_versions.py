@@ -29,12 +29,25 @@ def test_collect_covers_every_location_and_agrees():
     assert len(set(found.values())) == 1
 
 
-def test_minimal_example_is_not_pinned_to_current():
-    # The minimal pack deliberately stays at 1.0.0; the guard must not force it
-    # to the current version (it isn't in the watched set).
+def test_guard_never_reads_the_minimal_manifest(monkeypatch):
+    # The minimal pack deliberately stays at 1.0.0, so the guard must not read it at
+    # all (reading it under any label would force it to the current version). Spy on
+    # _read and assert the minimal manifest is never touched, while the extended one is.
     minimal = (ROOT / "examples" / "minimal.feedpak" / "manifest.yaml").read_text(encoding="utf-8")
-    assert 'feedpak_version: "1.0.0"' in minimal
-    assert "minimal example" not in cv.collect()
+    assert 'feedpak_version: "1.0.0"' in minimal          # documents the intent
+
+    reads: list[str] = []
+    original = cv._read
+
+    def spy(rel: str):
+        reads.append(rel)
+        return original(rel)
+
+    monkeypatch.setattr(cv, "_read", spy)
+    cv.collect()
+
+    assert "examples/extended.feedpak/manifest.yaml" in reads      # extended IS watched
+    assert not any("minimal.feedpak" in r for r in reads)          # minimal is NOT read
 
 
 def test_section_slice_excludes_minimal_example():
