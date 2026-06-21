@@ -632,9 +632,9 @@ keys, so its function is not a property of the shape. The song-level *harmony tr
 derive one from the other, but neither is authoritative).
 
 The `q` token is drawn from a **shared chord-quality vocabulary** — a recommended (not closed) set
-including `"maj"`, `"min"`, `"maj7"`, `"m7"`, `"7"`, `"m7b5"`, `"dim"`, `"aug"`, `"sus2"`,
-`"sus4"`, `"6"`, `"9"`, … — the same set [`harmony.json`'s `quality`](#78-harmonyjson) uses, so the
-two stay interoperable.
+including `"maj"`, `"m"` (minor triad; `"min"` is an accepted synonym), `"maj7"`, `"m7"`, `"7"`,
+`"m7b5"`, `"dim"`, `"aug"`, `"sus2"`, `"sus4"`, `"6"`, `"9"`, … — the same set
+[`harmony.json`'s `quality`](#78-harmonyjson) uses, so the two stay interoperable.
 
 ### 6.4. Anchors
 
