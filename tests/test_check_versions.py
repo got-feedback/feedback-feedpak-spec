@@ -67,6 +67,22 @@ def test_section_slice_excludes_minimal_example():
     assert hits and all(v == header for v in hits)
 
 
+def test_missing_section_marker_reports_real_cause(monkeypatch, capsys):
+    # If the §4.2 bounding heading is renamed, the guard must point at that — not
+    # emit a confusing mismatch from swallowing the rest of the document.
+    original = cv._read
+
+    def fake(rel: str):
+        text = original(rel)
+        if rel == "spec/feedpak-v1.md" and text is not None:
+            text = text.replace("### 4.2.", "### 4.2-renamed.")
+        return text
+
+    monkeypatch.setattr(cv, "_read", fake)
+    assert cv.main() == 1
+    assert "4.2" in capsys.readouterr().err
+
+
 def test_regexes_match_real_files():
     spec = (ROOT / "spec" / "feedpak-v1.md").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")

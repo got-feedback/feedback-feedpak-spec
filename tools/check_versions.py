@@ -85,14 +85,25 @@ def collect() -> dict[str, str | None]:
         print("error: no released version section in CHANGELOG.md", file=sys.stderr)
     found["CHANGELOG"] = changelog
 
-    section = _section(spec_text, "### 4.1.", "### 4.2.")
-    hits = _FEEDPAK_VERSION_RE.findall(section)
-    if not hits:
-        print("error: no `feedpak_version` value found in spec §4.1", file=sys.stderr)
+    # Validate the bounding headings explicitly so a renamed/missing marker reports the
+    # real cause, rather than _section() silently falling back to rest-of-document (which
+    # could swallow the §5 minimal-manifest example and produce a confusing mismatch).
+    if "### 4.1." not in spec_text:
+        print("error: spec heading '### 4.1.' not found (renamed?)", file=sys.stderr)
+        found["spec §4.1"] = None
+    elif "### 4.2." not in spec_text:
+        print("error: spec heading '### 4.2.' not found — cannot bound the §4.1 slice "
+              "(renamed?)", file=sys.stderr)
         found["spec §4.1"] = None
     else:
-        for n, v in enumerate(hits, 1):
-            found[f"spec §4.1 ({n})"] = v
+        section = _section(spec_text, "### 4.1.", "### 4.2.")
+        hits = _FEEDPAK_VERSION_RE.findall(section)
+        if not hits:
+            print("error: no `feedpak_version` value found in spec §4.1", file=sys.stderr)
+            found["spec §4.1"] = None
+        else:
+            for n, v in enumerate(hits, 1):
+                found[f"spec §4.1 ({n})"] = v
 
     return found
 
