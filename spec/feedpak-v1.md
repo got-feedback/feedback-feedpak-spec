@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.5.0
+- **Specification version:** 1.6.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-06-21
@@ -141,19 +141,20 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.5.0"
+feedpak_version: "1.6.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.5.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.6.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
   [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0; and the per-note
   teaching marks [`fg`](#622-teaching-marks-fg-ch-sd) / [`ch`](#622-teaching-marks-fg-ch-sd) /
   [`sd`](#622-teaching-marks-fg-ch-sd) in 1.5.0 — are all additive, so an older Reader simply
-  ignores what it does not recognise and a 1.0.0 pack is also a valid 1.5.0 pack. 1.3.0 added no
-  on-disk field.)
+  ignores what it does not recognise and a 1.0.0 pack is also a valid 1.6.0 pack. 1.3.0 added no
+  on-disk field; 1.6.0 accepts the `.jsonc` data-file extension (see [§8](#8-reading-and-writing))
+  but adds no on-disk field.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -971,8 +972,10 @@ quick metadata view. For a full load, resolve each manifest pointer to its file,
 against the relevant schema, and merge per the priority rules in [§6.1](#61-top-level-shape) and
 [§7.4](#74-song_timelinejson). Unknown manifest keys and files are retained, not discarded.
 
-**JSONC comments.** When a manifest pointer resolves to a `.jsonc` file, a Reader **MUST** strip
-C-style comments (`//` line comments and `/* */` block comments) before parsing the JSON content.
+**JSONC comments (normative).** The requirements in this paragraph are binding, notwithstanding
+the otherwise-informative framing of §8. When a manifest pointer resolves to a `.jsonc` file, a
+Reader **MUST** strip C-style comments (`//` line comments and `/* */` block comments) before
+parsing the JSON content.
 Comments are the **only** relaxation permitted: trailing commas, single-quoted strings, and other
 JSON5-style extensions are **NOT** allowed — after comment removal the content **MUST** be strict,
 valid JSON. A Writer that preserves edits to a `.jsonc` file **SHOULD** leave the original comments

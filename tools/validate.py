@@ -80,12 +80,18 @@ def _parse_jsonc(text: str) -> object:
 
     Handles ``//`` line comments and ``/* */`` block comments, respecting
     string boundaries so that comment-like text inside strings is preserved.
+    Newlines inside block comments are kept, so a JSON parse error still points
+    at roughly the right line in the original source.
     """
-    stripped = _JSONC_STRIP_RE.sub(
-        lambda m: m.group(0) if m.group(0).startswith('"') else '',
-        text,
-    )
-    return json.loads(stripped)
+    def _strip(m: re.Match[str]) -> str:
+        s = m.group(0)
+        if s.startswith('"'):
+            return s                      # string literal — keep verbatim
+        if s.startswith("/*"):
+            return "\n" * s.count("\n")   # block comment — keep line structure
+        return ""                         # // line comment (no embedded newline)
+
+    return json.loads(_JSONC_STRIP_RE.sub(_strip, text))
 
 
 def load_schema(name: str) -> Draft202012Validator:
@@ -136,14 +142,13 @@ def validate_json_file(root: Path, relpath: str, validator: Draft202012Validator
     if not target.is_file():
         rep.err(f"missing file referenced by manifest: {relpath}")
         return
+    is_jsonc = relpath.endswith(".jsonc")
     try:
         raw = target.read_text(encoding="utf-8")
-        if relpath.endswith(".jsonc"):
-            data = _parse_jsonc(raw)
-        else:
-            data = json.loads(raw)
+        data = _parse_jsonc(raw) if is_jsonc else json.loads(raw)
     except Exception as exc:  # noqa: BLE001
-        rep.err(f"{relpath}: not valid JSON ({exc})")
+        kind = "not valid JSON (after JSONC comment-stripping)" if is_jsonc else "not valid JSON"
+        rep.err(f"{relpath}: {kind} ({exc})")
         return
     for e in sorted(validator.iter_errors(data), key=lambda e: list(e.path)):
         loc = "/".join(str(x) for x in e.path) or "<root>"

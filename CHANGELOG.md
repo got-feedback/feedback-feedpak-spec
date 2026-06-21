@@ -10,6 +10,11 @@ relate.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-21
+
+Additive (MINOR) release: the `.jsonc` data-file extension (comment-annotated JSON), plus a
+docs-site version banner. Backward-compatible — no existing pack is affected.
+
 ### Added
 - Docs site (no format change): a build-time version banner. The site now stamps the newest
   released `CHANGELOG.md` version (`SPEC_VERSION` env → `mkdocs.yml` `extra.spec_version` →
@@ -150,7 +155,8 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.2.0...v1.3.0
