@@ -232,7 +232,8 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.5.0...v1.6.0

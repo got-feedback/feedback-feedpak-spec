@@ -201,7 +201,8 @@ released as a **minor** bump and **MUST** be safe for an older Reader to ignore.
 
 **Carve-out: opt-in file-format relaxations.** One narrow class of change is released as a
 **minor** bump even though an older Reader cannot transparently ignore it: an *opt-in relaxation
-of how a data file is encoded* that a pack uses only if it chooses to. Two such relaxations exist
+of how a file is encoded* — a data file's text, or a stem's audio codec — that a pack uses only
+if it chooses to. Two such relaxations exist
 in this document:
 
 1. The [`.jsonc` extension](#8-reading-and-writing) (1.6.0), whose files may contain comments a
