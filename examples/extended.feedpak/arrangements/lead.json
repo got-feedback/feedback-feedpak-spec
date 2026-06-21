@@ -17,7 +17,7 @@
       {"s": 1, "f": 2},
       {"s": 2, "f": 2},
       {"s": 3, "f": 0}
-    ]}
+    ], "fn": {"rn": "vi", "q": "m", "deg": 9}}
   ],
   "anchors": [
     {"time": 0.0, "fret": 1, "width": 4}
@@ -27,6 +27,7 @@
   ],
   "templates": [
     {"name": "Em", "displayName": "Em", "arp": false,
-     "fingers": [-1, 2, 1, -1, -1, -1], "frets": [0, 2, 2, 0, 0, 0]}
+     "fingers": [-1, 2, 1, -1, -1, -1], "frets": [0, 2, 2, 0, 0, 0],
+     "voicing": "open"}
   ]
 }
