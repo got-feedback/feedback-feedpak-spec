@@ -66,6 +66,36 @@ SIDE_FILE_SCHEMAS = {
 }
 NON_JSON_POINTERS = ("cover", "preview")
 
+# Regex to match JSON string literals (preserved) and C-style comments (stripped).
+# This is used by _parse_jsonc to handle .jsonc files.
+_JSONC_STRIP_RE = re.compile(
+    r'"(?:[^"\\]|\\.)*"|'   # string literal — keep as-is
+    r'//.*|'                  # // line comment — strip
+    r'/\*[\s\S]*?\*/',        # /* block comment */ — strip
+)
+
+
+def _parse_jsonc(text: str) -> object:
+    """Parse a JSONC string, stripping C-style comments before JSON parsing.
+
+    Handles ``//`` line comments and ``/* */`` block comments, respecting
+    string boundaries so that comment-like text inside strings is preserved.
+    Newlines inside block comments are kept, so a JSON parse error still points
+    at roughly the right line in the original source.
+    """
+    def _strip(m: re.Match[str]) -> str:
+        s = m.group(0)
+        if s.startswith('"'):
+            return s                      # string literal — keep verbatim
+        if s.startswith("/*"):
+            # A comment is whitespace: never concatenate the tokens around it
+            # (e.g. 1/*c*/2 must not become 12). Keep embedded newlines for
+            # error-line fidelity; otherwise collapse to a single space.
+            return "\n" * s.count("\n") if "\n" in s else " "
+        return ""                         # // line comment — the EOL newline remains
+
+    return json.loads(_JSONC_STRIP_RE.sub(_strip, text))
+
 
 def load_schema(name: str) -> Draft202012Validator:
     with open(SCHEMA_DIR / name, encoding="utf-8") as fh:
@@ -115,10 +145,13 @@ def validate_json_file(root: Path, relpath: str, validator: Draft202012Validator
     if not target.is_file():
         rep.err(f"missing file referenced by manifest: {relpath}")
         return
+    is_jsonc = relpath.endswith(".jsonc")
     try:
-        data = json.loads(target.read_text(encoding="utf-8"))
+        raw = target.read_text(encoding="utf-8")
+        data = _parse_jsonc(raw) if is_jsonc else json.loads(raw)
     except Exception as exc:  # noqa: BLE001
-        rep.err(f"{relpath}: not valid JSON ({exc})")
+        kind = "not valid JSON (after JSONC comment-stripping)" if is_jsonc else "not valid JSON"
+        rep.err(f"{relpath}: {kind} ({exc})")
         return
     for e in sorted(validator.iter_errors(data), key=lambda e: list(e.path)):
         loc = "/".join(str(x) for x in e.path) or "<root>"

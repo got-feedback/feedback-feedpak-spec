@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.5.0
+- **Specification version:** 1.6.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-06-21
@@ -102,9 +102,10 @@ my-song.feedpak/
    slashes, no leading `/`, no `..` segments, no empty segments (`//`), no colon (`:`) — which
    excludes drive letters and alternate-data-stream paths — and no backslashes. Readers **MUST**
    reject paths that escape the package root.
-3. **YAML for the manifest, JSON for data files.** The manifest is YAML so it is comfortable to
-   hand-edit; all structured data files are JSON so they are fast to parse and round-trip. A
-   YAML manifest is, by [YAML 1.2](https://yaml.org/spec/1.2.2/) rules, valid against the
+3. **YAML for the manifest, JSON (or JSONC) for data files.** The manifest is YAML so it is
+   comfortable to hand-edit; all structured data files are JSON (or JSONC, where the `.jsonc`
+   extension signals that the file MAY contain `//` line comments and `/* */` block comments).
+   A YAML manifest is, by [YAML 1.2](https://yaml.org/spec/1.2.2/) rules, valid against the
    JSON-Schema definitions in [`schemas/`](../schemas/) (YAML is a JSON superset for this
    purpose).
 
@@ -112,8 +113,8 @@ my-song.feedpak/
 
 ## 3. Encodings and conventions
 
-- **Text files** (`manifest.yaml`, all `*.json`) **MUST** be UTF-8 encoded. A Writer **SHOULD
-  NOT** emit a byte-order mark.
+- **Text files** (`manifest.yaml`, all `*.json`, all `*.jsonc`) **MUST** be UTF-8 encoded. A
+  Writer **SHOULD NOT** emit a byte-order mark.
 - **Time** is always expressed in **seconds as a JSON number** (floating point), measured from
   the start of the song's audio. Time fields are named `t` or `time`. Writers **MUST NOT** use
   milliseconds, ticks, or sample counts.
@@ -140,19 +141,22 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.5.0"
+feedpak_version: "1.6.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.5.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.6.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
   [`bt`](#621-bend-shape-bt-bnv) / [`bnv`](#621-bend-shape-bt-bnv) in 1.4.0; and the per-note
   teaching marks [`fg`](#622-teaching-marks-fg-ch-sd) / [`ch`](#622-teaching-marks-fg-ch-sd) /
   [`sd`](#622-teaching-marks-fg-ch-sd) in 1.5.0 — are all additive, so an older Reader simply
-  ignores what it does not recognise and a 1.0.0 pack is also a valid 1.5.0 pack. 1.3.0 added no
-  on-disk field.)
+  ignores what it does not recognise. 1.3.0 added no on-disk field. 1.6.0 adds no new manifest
+  key or note/side-file field either, but it does newly permit the `.jsonc` data-file extension
+  (see [§8](#8-reading-and-writing)): such files MAY contain comments that a Reader **MUST** strip,
+  so — unlike the additive fields above — a comment-bearing `.jsonc` file requires a JSONC-aware
+  Reader rather than being silently ignorable.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -172,7 +176,10 @@ Changes to the format are released under semver semantics, applied to `feedpak_v
 **Reader rules.** A Reader that supports feedpak major version *X*:
 
 - **MUST** accept any package whose declared major version is *X*, regardless of its minor or
-  patch (it ignores unknown minor additions per [§1.2](#12-roles)).
+  patch (it ignores unknown minor additions per [§1.2](#12-roles)) — with the single exception that
+  a package which *uses* an opt-in file-format relaxation the Reader does not implement (see the
+  carve-out below) **MAY** be rejected with a clear error. This MUST-accept guarantee otherwise
+  holds for all ordinary additive minor/patch changes.
 - **SHOULD** warn, and **MAY** refuse with a clear error, when a package declares a major
   version **greater** than *X*.
 - **MAY** accept a package whose major version is **less** than *X*, applying the
@@ -181,6 +188,22 @@ Changes to the format are released under semver semantics, applied to `feedpak_v
 **Writer rules.** A Writer **MUST NOT** introduce a backward-incompatible structural change
 without bumping the **major** version. Additive changes (new optional keys/files) **MUST** be
 released as a **minor** bump and **MUST** be safe for an older Reader to ignore.
+
+**Carve-out: opt-in file-format relaxations.** One narrow class of change is released as a
+**minor** bump even though an older Reader cannot transparently ignore it: an *opt-in relaxation
+of how a data file is encoded* that a pack uses only if it chooses to. The sole such relaxation in
+this document is the [`.jsonc` extension](#8-reading-and-writing) (1.6.0), whose files may contain
+comments a Reader **MUST** strip. The justification for keeping it minor rather than major is that
+it is **strictly opt-in and per-file**: a pack that does not adopt `.jsonc` — and a `.jsonc` file
+that contains no comments — is byte-for-byte ordinary JSON that every Reader handles. Only a pack
+that *actually uses* the relaxation requires a Reader supporting the minor version that introduced
+it. This is therefore an explicit, bounded exception both to the "older Readers keep working by
+ignoring them" rule and to the **Reader rule** that a major-*X* Reader MUST accept any *X.y.z*
+package (a Reader **MAY** reject a package that uses a relaxation it does not implement). It is
+**not** a general license to add un-ignorable changes under a minor bump; any
+future relaxation of this kind **MUST** be opt-in and per-file in the same way, or else be released
+as a **major** bump. A Writer that needs maximum Reader compatibility **SHOULD NOT** rely on the
+relaxation (for `.jsonc`: keep data files as comment-free `.json`).
 
 ### 4.3. Side-file schema versions
 
@@ -367,9 +390,9 @@ it, and a Reader that does not understand it ignores it per [§1.2](#12-roles).
 
 ## 6. Arrangement JSON
 
-Arrangement files (`arrangements/<id>.json`) carry the playable note/chord data for one
-arrangement — the **wire format**. This document defines that format; it is the authoritative
-reference for it.
+Arrangement files (`arrangements/<id>.json`, or `arrangements/<id>.jsonc` for hand-edited
+packs) carry the playable note/chord data for one arrangement — the **wire format**. This
+document defines that format; it is the authoritative reference for it.
 
 ### 6.1. Top-level shape
 
@@ -654,10 +677,12 @@ and are not overridden per arrangement.
 
 Each side-file is referenced from the manifest by a pointer key (the "manifest opt-in, file off
 to the side" pattern; see [§9.1](#91-the-golden-rule-manifest-opt-in-file-off-to-the-side)).
-Every side-file that is a JSON **object SHOULD** carry a top-level integer `version` (see
-[§4.3](#43-side-file-schema-versions)). The one exception is `lyrics.json`, which is a flat JSON
-array kept for backward compatibility: it carries no `version` field, and its origin and
-revision are tracked at the manifest level instead (`lyrics_source`, `lyric_transcription`).
+Side-files use the `.json` extension by convention; hand-edited side-files MAY use `.jsonc` to
+signal that the file contains comments. Every side-file that is a JSON **object SHOULD** carry a
+top-level integer `version` (see [§4.3](#43-side-file-schema-versions)). The one exception is
+`lyrics.json`, which is a flat JSON array kept for backward compatibility: it carries no
+`version` field, and its origin and revision are tracked at the manifest level instead
+(`lyrics_source`, `lyric_transcription`).
 
 ### 7.1. `lyrics.json`
 
@@ -968,6 +993,31 @@ quick metadata view. For a full load, resolve each manifest pointer to its file,
 against the relevant schema, and merge per the priority rules in [§6.1](#61-top-level-shape) and
 [§7.4](#74-song_timelinejson). Unknown manifest keys and files are retained, not discarded.
 
+**JSONC comments (normative).** The requirements in this paragraph are binding, notwithstanding
+the otherwise-informative framing of §8. When a manifest pointer resolves to a `.jsonc` file, a
+Reader **MUST** strip C-style comments (`//` line comments and `/* */` block comments) before
+parsing the JSON content.
+Comments are the **only** relaxation permitted: trailing commas, single-quoted strings, and other
+JSON5-style extensions are **NOT** allowed — after comment removal the content **MUST** be strict,
+valid JSON. A Writer that preserves edits to a `.jsonc` file **SHOULD** leave the original comments
+intact. For new hand-edited packs, Writers **MAY** write `.jsonc` data files and **MAY** include
+comments in them.
+
+Note on compatibility. `.jsonc` is governed by the **opt-in file-format relaxation carve-out** in
+[§4.2](#42-compatibility-policy), not by the ordinary "older Readers keep working by ignoring them"
+rule. Two facts must be kept separate:
+
+1. **No existing pack breaks.** Packs that do not adopt `.jsonc` are entirely unchanged, and a
+   comment-free `.jsonc` file is byte-for-byte valid JSON.
+2. **A `.jsonc` file that actually contains comments is NOT readable by a strict-JSON-only
+   Reader** — such a Reader errors on `//` and `/* */`. Only a Reader that implements the
+   comment-stripping step above can read it. Unlike the optional fields added under a normal minor
+   bump, comments cannot be safely *ignored* by an unaware Reader — which is exactly why §4.2 lists
+   this as a bounded, opt-in exception.
+
+A Writer that needs a pack to be readable by the broadest range of Readers therefore **SHOULD**
+keep its data files as comment-free `.json`.
+
 **Writing.** Build the package in a working directory: write `arrangements/<id>.json` per
 arrangement; encode audio into `stems/`; write any side-files; compose `manifest.yaml` last so
 its index matches what was written. Emit YAML with block style and **preserve key order** for
@@ -996,7 +1046,7 @@ implementations is required.
 
 - **Manifest keys:** `snake_case`, descriptive; singular for one value (`lyrics`, `cover`,
   `drum_tab`), plural for lists (`stems`, `arrangements`).
-- **Filenames:** lowercase; JSON for structured data, OGG for audio, JPEG/PNG for images.
+- **Filenames:** lowercase; JSON (`.json`) or JSONC (`.jsonc`) for structured data, OGG for audio, JPEG/PNG for images.
 - **JSON fields:** short names for hot-path data streamed many times (`t`, `s`, `f`); long names
   for one-off metadata.
 - **Time fields:** always `t` or `time`, always seconds as floats.
