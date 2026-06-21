@@ -56,5 +56,5 @@ Version numbers follow the policy in [spec §4.2](spec/feedpak-v1.md#42-compatib
 ## Relationship to implementations
 
 This repository defines the format only. Applications that read or write feedpak (including
-those in the wider feedback project) are separate efforts and track this spec as a dependency;
+those in the wider feedBack project) are separate efforts and track this spec as a dependency;
 they do not drive it. A change is not part of the format until it lands here.
