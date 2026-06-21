@@ -6,7 +6,8 @@ feedpak specification prose.
 
 # feedpak Hand-Editing Guide
 
-A `.feedpak` is just a zip of plain files: some YAML, some JSON, some OGG audio, maybe a JPEG.
+A `.feedpak` is just a zip of plain files: some YAML, some JSON, some audio (OGG/WAV by default,
+optionally MP3/FLAC/Opus), maybe a JPEG.
 That means you can open one up and change it. Want to record your own rhythm guitar take and use
 that instead of the mix? Fix an artist typo? Swap the cover art? Replace an automated stem split
 that bled drums into the "other" stem? You don't need to rebuild the whole pack from its source —
@@ -89,22 +90,29 @@ rhythm guitar, and you'd rather play and record your own take.
    first sample lines up with `t=0` of the reference (zoom in tight and check visually against the
    kick or first guitar hit).
 
-### Step 3 — Export as OGG
+### Step 3 — Export the audio
 
 1. **Solo** your recorded track (mute every reference track).
-2. Export as **OGG Vorbis**.
-3. Quality slider around **5** is a good size/quality balance (the [spec's media
+2. Export as **OGG Vorbis** — the recommended baseline format. (WAV, FLAC, MP3, or Opus also
+   work; see the [spec's audio-format rules](feedpak-v1.md#532-audio-formats--baseline-dispatch-and-portability).
+   Keep at least one OGG/WAV stem so the pack stays portable.)
+3. Quality slider around **5** is a good size/quality balance for OGG (the [spec's media
    conventions](feedpak-v1.md#appendix-b-non-normative--media-conventions)). Save as
    `rhythm_custom.ogg`.
+   - *Exporting a different format?* The quality-slider guidance is OGG-specific (it doesn't
+     apply to WAV/FLAC/MP3/Opus). Use the matching file extension (e.g. `rhythm_custom.flac`)
+     and use that exact name in the manifest `file:` path in Step 4.
 4. Confirm the export sample rate matches the rate you noted in Step 1.
 
 ### Step 4 — Drop it in and update the manifest
 
-1. Copy `rhythm_custom.ogg` into the pack's `stems/` folder.
+1. Copy your exported file into the pack's `stems/` folder (this guide uses `rhythm_custom.ogg`;
+   if you exported a different format in Step 3, substitute that filename — e.g.
+   `rhythm_custom.flac` — everywhere below, and keep at least one OGG/WAV stem for portability).
 2. Open `manifest.yaml` in any plain-text editor (VS Code, Notepad++, BBEdit, gedit — all fine;
    just **don't use a word processor**).
 3. Find the `stems:` block ([spec §5.3](feedpak-v1.md#53-stems)). Mark the stem you want enabled
-   on open with `default: true`:
+   on open with `default: true` (the `file:` value must match the extension you exported):
 
    ```yaml
    stems:

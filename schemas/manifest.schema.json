@@ -85,6 +85,7 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "file": { "$ref": "#/$defs/relpath" },
+        "codec": { "type": "string", "minLength": 1 },
         "default": {
           "oneOf": [
             { "type": "boolean" },

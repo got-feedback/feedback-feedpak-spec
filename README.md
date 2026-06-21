@@ -14,7 +14,7 @@ with them. One `.feedpak` holds all the authored data for a single song.
 
 | | |
 |---|---|
-| **Specification version** | 1.8.0 |
+| **Specification version** | 1.9.0 |
 | **Format major version** | 1 |
 | **Status** | Draft |
 | **Canonical extension** | `.feedpak` |
@@ -40,7 +40,8 @@ The design rests on three ideas, spelled out in the spec:
 
 1. **The manifest is the index.** Nothing is discovered by scanning filenames — every file
    is referenced from `manifest.yaml`.
-2. **Plain-text first.** YAML for the hand-edited manifest, JSON for data. Audio is OGG.
+2. **Plain-text first.** YAML for the hand-edited manifest, JSON for data. Audio is OGG/WAV by
+   default (the decode baseline), with MP3/FLAC/Opus allowed behind it.
 3. **Extensible without breaking readers.** New data is a new side-file plus a new manifest
    key; older readers ignore what they don't recognise.
 
@@ -94,7 +95,7 @@ This repository is dual-licensed so the format stays maximally open:
 
 Attribution is **not required**, but if you build on feedpak a link back to this
 repository is appreciated. Suggested citation: *"feedpak format specification, version
-1.8.0, https://github.com/got-feedback/feedpak-spec"*.
+1.9.0, https://github.com/got-feedback/feedpak-spec"*.
 
 ## Contributing
 
