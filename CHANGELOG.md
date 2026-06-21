@@ -20,6 +20,32 @@ relate.
   caveats — comments are the only relaxation (no trailing commas / JSON5), and a comment-bearing
   `.jsonc` needs a JSONC-aware reader, so keep distributed packs as comment-free `.json`.
 
+## [1.9.0] - 2026-06-21
+
+Additive (MINOR) release: audio stem formats beyond OGG. Backward-compatible — every existing
+OGG-only pack stays valid, and a Reader that only decodes the baseline keeps working on any
+portable pack.
+
+### Added
+- **Audio stem formats beyond OGG** ([spec §5.3.2](spec/feedpak-v1.md#532-audio-formats--baseline-dispatch-and-portability),
+  [§1](spec/feedpak-v1.md#1-conventions)): stems are now dispatched **by file extension**, with a
+  normative **decoder baseline** — a Reader **MUST** decode OGG (`.ogg`) and WAV (`.wav`) and
+  **SHOULD** decode MP3 / FLAC / Opus. A new OPTIONAL `codec` hint on each `stems[]` entry
+  disambiguates when an extension doesn't determine the codec (schema: `codec` on
+  `$defs/stemEntry` in [`schemas/manifest.schema.json`](schemas/manifest.schema.json); exercised
+  by the extended example's `full` stem as `codec: vorbis`). A **portability rule** requires a
+  distributable pack to carry at least one baseline-format stem, so non-baseline stems are
+  opportunistic enhancements rather than hard dependencies; a Reader **MUST** raise a clear error
+  or fall back rather than fail silently on a format it can't decode. Proprietary/game formats
+  (e.g. Wwise `.wem`) are explicitly **not** in the baseline, get **no** reference decoder, and
+  **MUST NOT** be a distributable pack's only stem.
+
+### Changed
+- **§4.2 compatibility carve-out** now lists two opt-in file-format relaxations — the existing
+  `.jsonc` extension and (new) non-baseline audio stem formats — both kept MINOR on the same
+  "strictly opt-in, per-file; only a pack that actually uses it needs a supporting Reader"
+  justification.
+
 ## [1.8.0] - 2026-06-21
 
 Additive (MINOR) release: the two deferred per-chord harmony descriptors from the §6.3.1 FEP.

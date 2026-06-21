@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.8.0
+- **Specification version:** 1.9.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-06-21
@@ -121,8 +121,10 @@ my-song.feedpak/
 - **Field names** in hot-path data (notes, chords, hits, beats) are deliberately short because
   they may be repeated tens of thousands of times in one file. Writers **MUST NOT** expand
   them. One-off metadata MAY use long, descriptive names.
-- **Audio stems** are OGG (Vorbis) by convention; a quality around `-q:a 5` balances size and
-  fidelity. **Cover art** is JPEG or PNG, conventionally square, 500–1500 px on a side.
+- **Audio stems** default to OGG (Vorbis) at a quality around `-q:a 5` (size/fidelity balance),
+  which is the **baseline format every Reader MUST decode**. Other formats MAY be carried and are
+  dispatched by file extension; see [§5.3](#53-stems) for the decoder baseline and portability
+  rule. **Cover art** is JPEG or PNG, conventionally square, 500–1500 px on a side.
 - **Unknown keys / files / fields** are reserved for forward-compatibility. Readers **MUST**
   ignore them rather than error, and Writers that copy or re-emit a feedpak **SHOULD** preserve
   them verbatim.
@@ -141,11 +143,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.8.0"
+feedpak_version: "1.9.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.8.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.9.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -159,7 +161,11 @@ feedpak_version: "1.8.0"
   key or note/side-file field either, but it does newly permit the `.jsonc` data-file extension
   (see [§8](#8-reading-and-writing)): such files MAY contain comments that a Reader **MUST** strip,
   so — unlike the additive fields above — a comment-bearing `.jsonc` file requires a JSONC-aware
-  Reader rather than being silently ignorable.)
+  Reader rather than being silently ignorable. 1.9.0 adds the optional stem
+  [`codec`](#53-stems) hint and broadens audio beyond OGG behind a MUST-decode baseline; a pack
+  that stays within the baseline is unaffected, while one that carries a non-baseline stem
+  format requires a Reader that supports it — the same opt-in shape as `.jsonc`, per the
+  [§4.2 carve-out](#42-compatibility-policy).)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -194,13 +200,21 @@ released as a **minor** bump and **MUST** be safe for an older Reader to ignore.
 
 **Carve-out: opt-in file-format relaxations.** One narrow class of change is released as a
 **minor** bump even though an older Reader cannot transparently ignore it: an *opt-in relaxation
-of how a data file is encoded* that a pack uses only if it chooses to. The sole such relaxation in
-this document is the [`.jsonc` extension](#8-reading-and-writing) (1.6.0), whose files may contain
-comments a Reader **MUST** strip. The justification for keeping it minor rather than major is that
-it is **strictly opt-in and per-file**: a pack that does not adopt `.jsonc` — and a `.jsonc` file
-that contains no comments — is byte-for-byte ordinary JSON that every Reader handles. Only a pack
-that *actually uses* the relaxation requires a Reader supporting the minor version that introduced
-it. This is therefore an explicit, bounded exception both to the "older Readers keep working by
+of how a data file is encoded* that a pack uses only if it chooses to. Two such relaxations exist
+in this document:
+
+1. The [`.jsonc` extension](#8-reading-and-writing) (1.6.0), whose files may contain comments a
+   Reader **MUST** strip.
+2. [Non-baseline audio stem formats](#53-stems) (1.9.0): a stem encoded in an audio format
+   outside the MUST-decode baseline (e.g. FLAC, Opus). A Reader that does not support that
+   format cannot play that stem.
+
+The justification for keeping each minor rather than major is that they are **strictly opt-in and
+per-file**: a pack that does not adopt `.jsonc` — and a `.jsonc` file with no comments — is
+byte-for-byte ordinary JSON every Reader handles; likewise a pack whose stems stay within the
+audio baseline is decodable by every Reader. Only a pack that *actually uses* a relaxation (a
+comment-bearing `.jsonc` file, or a non-baseline stem with no baseline alternative) requires a
+Reader supporting the minor version that introduced it. This is therefore an explicit, bounded exception both to the "older Readers keep working by
 ignoring them" rule and to the **Reader rule** that a major-*X* Reader MUST accept any *X.y.z*
 package (a Reader **MAY** reject a package that uses a relaxation it does not implement). It is
 **not** a general license to add un-ignorable changes under a minor bump; any
@@ -328,6 +342,7 @@ stems:
 |---|---|---|---|
 | `id` | string | — | **REQUIRED.** Stable identifier referenced by consumers. |
 | `file` | string (path) | — | **REQUIRED.** Path to the audio file. |
+| `codec` | string | — | OPTIONAL disambiguation hint (e.g. `"vorbis"`, `"opus"`, `"pcm"`, `"mp3"`, `"flac"`). When absent, the codec is inferred from the file extension. Provide it only when the extension is ambiguous (container ≠ codec). |
 | `default` | boolean | `false` | Whether this stem is enabled when the song opens. |
 
 `default` is logically boolean. For hand-edited convenience, Readers **MUST** also accept the
@@ -338,6 +353,37 @@ the obvious boolean. Writers **SHOULD** emit a real boolean or `"on"`/`"off"`.
 typically has a single `{id: full, file: stems/full.ogg}` entry; after stem splitting, `full`
 is commonly replaced by per-instrument entries (`guitar`, `bass`, `drums`, `vocals`, `other`,
 `piano`, …). No entry is guaranteed to be present beyond the non-empty requirement.
+
+#### 5.3.2. Audio formats — baseline, dispatch, and portability
+
+A stem's audio format is **dispatched by file extension** (matching the hand-editable
+filename-convention ethos of [§1](#1-conventions)); the optional `codec` field above is only a
+disambiguation hint for when an extension does not determine the codec. A Reader decodes the
+formats it supports and, for one it does not, **MUST** surface a clear error or fall back to
+another stem — it **MUST NOT** fail silently into dead air.
+
+**Decoder baseline.** A conformant Reader **MUST** decode:
+
+- **OGG (Vorbis)** — `.ogg`
+- **WAV (PCM)** — `.wav`
+
+and **SHOULD** decode **MP3** (`.mp3`), **FLAC** (`.flac`), and **Opus** (`.opus`). These are
+the recommended, broadly-portable formats; FLAC/WAV suit lossless masters, Opus/Vorbis/MP3 suit
+compressed delivery.
+
+**Portability rule.** A pack intended for distribution **MUST** include at least one stem whose
+format is in the MUST-decode baseline (in practice, an OGG or WAV `full` mix). Stems in any other
+format are **opportunistic enhancements** layered on top of that guaranteed-playable baseline, so
+a leaner Reader always has something to play. A Writer that controls its target environment **MAY**
+omit the baseline stem, but such a pack is not portable and a Reader **MAY** reject it with a
+clear error (see the [§4.2 opt-in carve-out](#42-compatibility-policy)).
+
+**Other / proprietary formats (e.g. WEM).** The format is codec-agnostic enough that a Reader
+**MAY** decode an extension outside the recommended set (for instance a desktop build that bundles
+a decoder for Wwise `.wem`) — but such formats are **NOT** part of the baseline, **MUST NOT** be
+the only stem in a distributable pack (the portability rule still applies), and this document
+ships **no** reference decoder for them. Relying on a non-recommended format makes a pack
+playable only on Readers that opted into it.
 
 #### 5.3.1. `stem_separation`
 
@@ -1078,7 +1124,7 @@ implementations is required.
 
 - **Manifest keys:** `snake_case`, descriptive; singular for one value (`lyrics`, `cover`,
   `drum_tab`), plural for lists (`stems`, `arrangements`).
-- **Filenames:** lowercase; JSON (`.json`) or JSONC (`.jsonc`) for structured data, OGG for audio, JPEG/PNG for images.
+- **Filenames:** lowercase; JSON (`.json`) or JSONC (`.jsonc`) for structured data, audio in a baseline-or-recommended format (`.ogg`/`.wav`, or `.mp3`/`.flac`/`.opus` — see [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)), JPEG/PNG for images.
 - **JSON fields:** short names for hot-path data streamed many times (`t`, `s`, `f`); long names
   for one-off metadata.
 - **Time fields:** always `t` or `time`, always seconds as floats.
@@ -1146,8 +1192,9 @@ the sole normative artifact, and the byte-for-byte layout of any wire protocol i
 
 ## Appendix B (non-normative) — media conventions
 
-- **Stems:** OGG (Vorbis), ~`-q:a 5`. Mono or stereo as the source dictates.
-- **Preview clip:** a short OGG (a few seconds) for hover-to-listen UIs.
+- **Stems:** OGG (Vorbis), ~`-q:a 5`, is the recommended default and baseline; other formats are
+  allowed behind the decoder baseline + portability rule ([§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)). Mono or stereo as the source dictates.
+- **Preview clip:** a short clip (a few seconds) for hover-to-listen UIs; same format guidance as stems.
 - **Cover art:** JPEG or PNG, square, 500–1500 px on a side.
 
 ## References
