@@ -266,6 +266,35 @@ Common hand-edits:
 
 It's plain JSON — edit in any text editor.
 
+#### Adding a translation or transliteration
+
+To ship lyrics in more than one form — the original plus a romanization (romaji, pinyin, …) or a
+translation — add a `lyric_tracks` list to `manifest.yaml` ([spec §5.5](feedpak-v1.md#55-lyric_tracks)).
+Each entry points at its own `lyrics.json`-shaped file, so write the extra track the same way as
+above and reference it:
+
+```yaml
+language: ja                  # the song's primary sung language (BCP 47)
+lyrics: lyrics.json           # keep this — it's the fallback for older readers
+lyric_tracks:
+  - id: ja
+    file: lyrics.json
+    language: ja
+    kind: original
+  - id: romaji
+    file: lyrics_romaji.json
+    language: ja-Latn
+    kind: transliteration
+  - id: en
+    file: lyrics_en.json
+    language: en
+    kind: translation
+```
+
+`kind` is `original`, `transliteration`, or `translation`. A transliteration usually copies the
+original's `t`/`d` timings 1:1 (same syllables, re-spelled); a translation carries its own timing.
+Leave the plain `lyrics:` line in place so a reader that predates this feature still shows lyrics.
+
 ### Tuning
 
 Per-arrangement, in `manifest.yaml` ([spec §5.2](feedpak-v1.md#52-arrangements)):

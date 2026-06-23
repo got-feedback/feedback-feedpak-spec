@@ -33,6 +33,7 @@ my-song.feedpak/
 ├── stems/
 │   └── full.ogg              # audio
 ├── lyrics.json               # optional side-files, each opted-in from the manifest
+├── lyrics_en.json            # extra lyric tracks (transliteration / translation) — see lyric_tracks
 └── cover.jpg
 ```
 
