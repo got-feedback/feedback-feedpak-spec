@@ -7,10 +7,10 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.10.0
+- **Specification version:** 1.11.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-06-21
+- **Date:** 2026-06-23
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
@@ -105,7 +105,7 @@ my-song.feedpak/
 3. **YAML for the manifest, JSON (or JSONC) for data files.** The manifest is YAML so it is
    comfortable to hand-edit; all structured data files are JSON (or JSONC, where the `.jsonc`
    extension signals that the file MAY contain `//` line comments and `/* */` block comments).
-   A YAML manifest is, by [YAML 1.2](https://yaml.org/spec/1.2.2/) rules, valid against the
+   A YAML manifest is, by [YAML 1.2](https://spec.yaml.io/main/spec/1.2.2/) rules, valid against the
    JSON-Schema definitions in [`schemas/`](../schemas/) (YAML is a JSON superset for this
    purpose).
 
@@ -145,11 +145,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.10.0"
+feedpak_version: "1.11.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.10.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.11.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -169,7 +169,11 @@ feedpak_version: "1.10.0"
   format requires a Reader that supports it — the same opt-in shape as `.jsonc`, per the
   [§4.2 carve-out](#42-compatibility-policy). 1.10.0 adds the optional song-level
   [`harmony`](#78-harmonyjson) side-file (intended chord progression) — additive, an older Reader
-  simply ignores the manifest key and file.)
+  simply ignores the manifest key and file. 1.11.0 adds the optional multi-lingual keys — top-level
+  [`language`](#51-top-level-keys), the per-stem [`language`](#53-stems) hint, and the
+  [`lyric_tracks`](#55-lyric_tracks) list (original / transliteration / translation lyric tracks) —
+  all additive, an older Reader ignores them and still loads the single [`lyrics`](#71-lyricsjson)
+  pointer as before.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -287,6 +291,7 @@ stems:
 | `artist` | string | **yes** | Artist name. |
 | `album` | string | no | Album. |
 | `year` | int | no | Release year. |
+| `language` | string | no | [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for the song's **primary sung language** (e.g. `en`, `ja`, `ko`, `zh-Hans`). Absent ⇒ unspecified (treat as `und`). See [§5.5](#55-lyric_tracks). |
 | `authors` | list | no | Human contributors who authored or edited this feedpak (see [§5.4](#54-authors)). Distinct from `artist`. |
 | `duration` | number | **yes** | Song length in seconds. |
 | `arrangements` | list | **yes** | Playable arrangements (see [§5.2](#52-arrangements)). MUST be non-empty. A notation-only entry still counts as an arrangement — it may omit `file` (see §5.2), but it is not an exception to the non-empty rule. |
@@ -295,6 +300,7 @@ stems:
 | `lyrics` | string (path) | no | Path to a lyrics JSON file (see [§7.1](#71-lyricsjson)). |
 | `lyrics_source` | string | no | Origin of the lyrics: `authored`, `transcribed`, or `user`. Absent ⇒ treat as `authored`. See [§7.1](#71-lyricsjson). |
 | `lyric_transcription` | object | no | Provenance metadata when lyrics came from an automated transcription engine. See [§7.1.1](#711-lyric_transcription). |
+| `lyric_tracks` | list | no | Additional lyric representations — original-script, transliteration, and translation tracks, plus per-language sung originals. See [§5.5](#55-lyric_tracks). |
 | `vocal_pitch` | string (path) | no | Path to per-syllable vocal pitch JSON (see [§7.2](#72-vocal_pitchjson)). |
 | `pitch_extraction` | object | no | Provenance metadata when vocal pitch was extracted by an automated engine. See [§7.2.1](#721-pitch_extraction). |
 | `vocal_pitch_contour` | string (path) | no | Path to a fine-grained pitch-contour JSON (see [§7.3](#73-vocal_pitch_contourjson)). |
@@ -353,6 +359,7 @@ stems:
 | `id` | string | — | **REQUIRED.** Stable identifier referenced by consumers. |
 | `file` | string (path) | — | **REQUIRED.** Path to the audio file. |
 | `codec` | string | — | OPTIONAL codec hint (e.g. `"vorbis"`, `"opus"`, `"pcm"`, `"mp3"`, `"flac"`). When absent, the codec is inferred from the file extension; when present it **overrides** the extension (see [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)). Its main use is disambiguating an extension that doesn't pin the codec (container ≠ codec), but it MAY be set redundantly to be explicit. |
+| `language` | string | — | OPTIONAL [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for a language-specific vocal stem (e.g. a `vocals_ja` stem with `language: ja` and a `vocals_en` stem with `language: en` for a song with two sung-language recordings). Absent ⇒ untagged — an instrumental stem or a stem whose language is unspecified. A [`lyric_tracks`](#55-lyric_tracks) entry's `stem` pointer pairs lyrics with the stem they were sung on. |
 | `default` | boolean | `false` | Whether this stem is enabled when the song opens. |
 
 `default` is logically boolean. For hand-edited convenience, Readers **MUST** also accept the
@@ -451,6 +458,63 @@ authors:
 When an entry omits `role`, a consumer **SHOULD** treat the contribution as unspecified rather
 than infer one. The `authors` key is OPTIONAL: a pack with no contributor metadata simply omits
 it, and a Reader that does not understand it ignores it per [§1.2](#12-roles).
+
+### 5.5. `lyric_tracks[]`
+
+An OPTIONAL top-level `lyric_tracks` list carries **multiple lyric representations** of a song so a
+global audience can read along in the original script, a transliteration (romaji, pinyin, …), or a
+translation — and so a song released with more than one sung-language recording can pair each
+vocal with its own lyrics. Each entry points at a lyrics file that uses the **same flat-array shape
+as [`lyrics.json`](#71-lyricsjson)** (the file schema is unchanged; only the manifest grows):
+
+```yaml
+language: ja                    # the song's primary sung language (§5.1)
+lyrics: lyrics.json             # the legacy single pointer — kept for old Readers
+lyric_tracks:
+  - id: ja
+    file: lyrics.json           # may reuse the same file the `lyrics` pointer names
+    language: ja
+    kind: original
+    stem: vocals_ja
+  - id: romaji
+    file: lyrics_romaji.json
+    language: ja-Latn
+    kind: transliteration
+  - id: en
+    file: lyrics_en.json
+    language: en
+    kind: translation
+```
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `id` | string | — | **REQUIRED.** Stable, filesystem-safe, lowercase identifier for this track. |
+| `file` | string (path) | — | **REQUIRED.** Path to a lyrics file in the [`lyrics.json`](#71-lyricsjson) flat-array shape. Two entries MAY name the same file (e.g. a `kind: original` track and the legacy `lyrics` pointer). |
+| `language` | string | — | **REQUIRED.** [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for this track's text. Use a script subtag for a transliteration (e.g. `ja-Latn` romaji, `zh-Latn` pinyin). |
+| `kind` | string | — | **REQUIRED.** One of `original` (the sung lyrics in their own language/script), `transliteration` (a phonetic re-spelling of an original, typically sharing its timing 1:1), or `translation` (the meaning in another language, for reading rather than precise sing-along). A Reader **MUST** accept these three and **SHOULD** treat any other value as `translation`. |
+| `lyrics_source` | string | `authored` | OPTIONAL origin of this track: `authored`, `transcribed`, or `user` — same vocabulary as the manifest [`lyrics_source`](#71-lyricsjson). |
+| `lyric_transcription` | object | — | OPTIONAL `{engine, model, version}` provenance when this track was machine-produced (transcribed or machine-translated) — same shape and semver semantics as [`stem_separation`](#531-stem_separation) and [`lyric_transcription`](#711-lyric_transcription). |
+| `stem` | string | — | OPTIONAL id of the [`stems[]`](#53-stems) entry this track's lyrics were sung on — pairs a per-language sung `original` with its vocal recording. Omitted for transliteration/translation tracks, which ride the original performance. |
+| `name` | string | `id` | OPTIONAL display label. |
+
+**Relationship to the single `lyrics` pointer.** The [`lyrics`](#71-lyricsjson) /
+[`lyrics_source`](#71-lyricsjson) / [`lyric_transcription`](#711-lyric_transcription) keys are
+unchanged and remain valid on their own. When `lyric_tracks` is **absent**, a Reader behaves
+exactly as before. When `lyric_tracks` is **present** it is authoritative for multi-track display,
+and a Writer **SHOULD** also set `lyrics` to point at the `file` of the `kind: original` track whose
+`language` matches the song's primary [`language`](#51-top-level-keys) — pointing at the same file,
+not a copy — so a Reader predating 1.11.0 still shows lyrics. A Reader that understands
+`lyric_tracks` **MAY** ignore the `lyrics` pointer when the list is present.
+
+**No new file schema.** Each track is an ordinary [`lyrics.json`](#71-lyricsjson) array: a
+transliteration track typically mirrors the original's syllable timing 1:1, while a translation
+track carries its own (looser, reading-oriented) timing. The [§7.1](#71-lyricsjson) rule that
+`lyrics.json` is a versionless flat array is preserved for every track. Per-track vocal pitch is
+out of scope for this version (the melody is largely language-independent); a future version MAY
+add it.
+
+`lyric_tracks` is OPTIONAL; a Reader that does not understand it ignores it per [§1.2](#12-roles)
+and falls back to the single `lyrics` pointer.
 
 ---
 
@@ -808,14 +872,23 @@ the side-file `version` guidance in [§4.3](#43-side-file-schema-versions) and [
 | `w` | string | Syllable text. A trailing `-` joins to the next syllable as one word; a trailing `+` marks the last syllable of a line. Both are suffixes on a real syllable, not standalone entries. |
 
 The manifest `lyrics_source` key records the origin: `authored` (from an authored chart),
-`transcribed` (machine transcription), or `user` (hand-edited). Absent ⇒ `authored`. A UI MAY
-use this to badge machine-generated lyrics differently.
+`transcribed` (machine-generated by an automated engine — speech transcription, and, for
+[`lyric_tracks`](#55-lyric_tracks), machine translation or transliteration), or `user`
+(hand-edited). Absent ⇒ `authored`. A UI MAY use this to badge machine-generated lyrics
+differently.
+
+A song MAY carry **more than one lyric track** — an original-script track plus a transliteration
+and/or translation, or per-language sung originals. These additional tracks are listed in the
+manifest [`lyric_tracks`](#55-lyric_tracks) key (§5.5); each one is a file in this same flat-array
+shape. The single `lyrics` pointer remains the backward-compatible primary track.
 
 #### 7.1.1. `lyric_transcription`
 
 When `lyrics_source` is `transcribed` (or any future automated origin), an OPTIONAL top-level
 `lyric_transcription` object records `{engine, model, version}` with the same shape and semver
-semantics as [`stem_separation`](#531-stem_separation). Omitted for `authored`/`user` lyrics.
+semantics as [`stem_separation`](#531-stem_separation), identifying the automated engine that
+produced the text — speech transcription, or (for a [`lyric_tracks`](#55-lyric_tracks) entry)
+machine translation or transliteration. Omitted for `authored`/`user` lyrics.
 
 ### 7.2. `vocal_pitch.json`
 
@@ -1276,6 +1349,6 @@ the sole normative artifact, and the byte-for-byte layout of any wire protocol i
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) — Key words for use in RFCs.
 - [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) — Ambiguity of uppercase vs lowercase.
 - [Semantic Versioning 2.0.0](https://semver.org/).
-- [YAML 1.2.2](https://yaml.org/spec/1.2.2/).
+- [YAML 1.2.2](https://spec.yaml.io/main/spec/1.2.2/).
 - [JSON Schema 2020-12](https://json-schema.org/draft/2020-12/schema).
 - [General MIDI percussion key map](https://en.wikipedia.org/wiki/General_MIDI#Percussion) (drum piece-id GM mapping).

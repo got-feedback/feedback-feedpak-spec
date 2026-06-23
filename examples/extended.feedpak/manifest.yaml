@@ -1,11 +1,12 @@
 # Extended feedpak exercising optional side-files: lyrics, vocal pitch,
 # song timeline, and a drum tab. See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.10.0"
+feedpak_version: "1.11.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
 year: 2026
+language: en           # BCP 47 — the song's primary sung language (§5.1)
 authors:
   - name: Jane Smith
     role: transcriber
@@ -34,9 +35,29 @@ stems:
   - id: full
     file: stems/full.ogg
     codec: vorbis        # OPTIONAL disambiguation hint; inferred from .ogg when absent
+    language: en         # BCP 47 — the sung language carried in this stem (§5.3)
     default: true
-lyrics: lyrics.json
+lyrics: lyrics.json      # legacy single pointer — the primary (en) track, for pre-1.11.0 readers
 lyrics_source: authored
+lyric_tracks:            # multi-lingual lyric representations (§5.5)
+  - id: en
+    file: lyrics.json    # same file the `lyrics` pointer names — the sung original
+    language: en
+    kind: original
+    stem: full
+  - id: ja
+    file: lyrics_ja.json
+    language: ja
+    kind: translation
+    lyrics_source: transcribed
+    lyric_transcription:
+      engine: example-mt
+      model: demo-translate-1
+      version: "1.0.0"
+  - id: romaji
+    file: lyrics_romaji.json
+    language: ja-Latn
+    kind: transliteration
 vocal_pitch: vocal_pitch.json
 vocal_pitch_contour: vocal_pitch_contour.json
 song_timeline: song_timeline.json

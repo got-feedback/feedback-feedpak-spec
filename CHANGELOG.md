@@ -10,6 +10,34 @@ relate.
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-06-23
+
+Additive (MINOR) release: multi-lingual lyric tracks, language tags, and language-tagged vocal
+stems. Backward-compatible — a 1.0.0 pack is also a valid 1.11.0 pack, and an older reader ignores
+the new optional keys and still loads the single `lyrics` pointer + stems as before.
+
+### Added
+- **Multi-lingual packs** ([spec §5.5](spec/feedpak-v1.md#55-lyric_tracks),
+  [§5.1](spec/feedpak-v1.md#51-top-level-keys), [§5.3](spec/feedpak-v1.md#53-stems)): three OPTIONAL
+  additive keys so a pack can express language and carry more than one lyric representation —
+  - a top-level **`language`** ([BCP 47](https://www.rfc-editor.org/info/bcp47)) naming the song's
+    primary sung language;
+  - a per-stem **`language`** hint tagging a language-specific vocal stem (e.g. `vocals_ja` /
+    `vocals_en` for a song with two sung-language recordings);
+  - a **`lyric_tracks`** list of additional lyric files, each with `id`, `file`, `language`, and a
+    `kind` of `original` / `transliteration` / `translation`, plus OPTIONAL `lyrics_source`,
+    `lyric_transcription` provenance, and a `stem` pointer pairing a sung original with its vocal
+    recording.
+
+  Each track is an ordinary [`lyrics.json`](spec/feedpak-v1.md#71-lyricsjson)-shaped flat array, so
+  **no new side-file schema** is introduced — only `schemas/manifest.schema.json` grows (a `bcp47`
+  `$def`, a `lyricTrack` `$def`, the `lyric_tracks` array, and `language` on the manifest and on
+  `$defs/stemEntry`). The legacy single `lyrics` pointer is unchanged: when `lyric_tracks` is absent
+  a reader behaves exactly as before, and when present a writer SHOULD still point `lyrics` at the
+  primary-language `original` track's file for pre-1.11.0 readers. Exercised by the extended example
+  (an English original + a Japanese translation + a romaji transliteration, and a `language`-tagged
+  `full` stem).
+
 ### Changed
 - CI (no format change): the version-consistency guard (`tools/check_versions.py`) now covers
   every place the current version is written — the spec header, the §4.1 `feedpak_version`
@@ -253,7 +281,8 @@ Initial public release of the feedpak format specification.
 - Repository governance: README, CONTRIBUTING (DCO + enhancement-proposal process),
   GOVERNANCE, CODE_OF_CONDUCT, and dual CC0/MIT licensing.
 
-[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/got-feedback/feedpak-spec/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/got-feedback/feedpak-spec/compare/v1.7.0...v1.8.0
